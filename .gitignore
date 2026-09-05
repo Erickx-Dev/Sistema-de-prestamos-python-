@@ -1,0 +1,15 @@
+# Ignorar bases de datos SQLite y sus archivos temporales
+*.db
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Mantener la carpeta data vacía en el repo
+data/*.db
+!data/.gitkeep
+
+# Python cache
+__pycache__/
+*.pyc
+.pytest_cache/
