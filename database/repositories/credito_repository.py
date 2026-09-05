@@ -146,6 +146,12 @@ class CreditoRepository:
         cursor.execute("SELECT * FROM creditos")
         return [self._row_to_credito(row) for row in cursor.fetchall()]
 
+    def listar_todas_las_cuotas(self) -> list[Cuota]:
+        """Obtiene todas las cuotas de todos los créditos ordenadas por vencimiento."""
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT * FROM cuotas ORDER BY fecha_vencimiento ASC, numero_cuota ASC")
+        return [self._row_to_cuota(row) for row in cursor.fetchall()]
+
     def obtener_cuotas_pendientes(self, limite: int = 10) -> list[dict]:
         """Obtiene las próximas cuotas pendientes de todos los créditos con info del cliente.
         Returns list of dicts with keys: cuota_id, credito_id, numero_cuota, fecha_vencimiento, monto, estado, cliente_nombre, cliente_id

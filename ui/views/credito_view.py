@@ -40,10 +40,18 @@ class CreditoView(ctk.CTkScrollableFrame):
         self.cliente_combo = ctk.CTkOptionMenu(
             form_inner, 
             variable=self.cliente_var, 
-            font=FONTS["body"], 
-            fg_color=COLORS["input_bg"],
+            font=FONTS["body_bold"], 
+            dropdown_font=FONTS["body"],
+            fg_color="#FFFFFF",
+            text_color=COLORS["text_primary"],
             button_color=COLORS["primary"],
-            button_hover_color=COLORS["primary_hover"]
+            button_hover_color=COLORS["primary_hover"],
+            dropdown_fg_color=COLORS["bg_panel"],
+            dropdown_text_color=COLORS["text_primary"],
+            dropdown_hover_color=COLORS["row_hover"],
+            dynamic_resizing=False,
+            anchor="w",
+            height=38,
         )
         self.cliente_combo.pack(fill="x", pady=(0, 15))
         
@@ -192,8 +200,11 @@ class CreditoView(ctk.CTkScrollableFrame):
             
             cuota_aprox = total / num_cuotas if num_cuotas > 0 else Decimal('0')
             
+            cliente_nombre = cliente_str.split(" (")[0] if " (" in cliente_str else cliente_str
+
             self._calculated_data = {
                 "cliente_id": cliente_id,
+                "cliente_nombre": cliente_nombre,
                 "capital": capital,
                 "tasa": tasa,
                 "plazo": plazo,
@@ -243,8 +254,10 @@ class CreditoView(ctk.CTkScrollableFrame):
             except Exception as e:
                 self.app.show_notification(f"Error al crear crédito: {str(e)}", "error")
                 
+        cliente_nombre = self._calculated_data.get("cliente_nombre", "el cliente")
         msg = (
-            f"¿Confirma la creación de este crédito por {formato_moneda(self._calculated_data['capital'])} "
-            f"para pagar en {self._calculated_data['num_cuotas']} cuotas?"
+            f"¿Confirma la creación de este crédito para {cliente_nombre} por "
+            f"{formato_moneda(self._calculated_data['capital'])} a pagar en "
+            f"{self._calculated_data['num_cuotas']} cuotas?"
         )
         ConfirmDialog(self, title="Crear Crédito", message=msg, on_confirm=do_create)

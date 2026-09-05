@@ -10,17 +10,37 @@ class BaseDialog(ctk.CTkToplevel):
     def __init__(self, parent, title: str, width: int = 400, height: int = 500):
         super().__init__(parent)
         self.title(title)
-        self.geometry(f"{width}x{height}")
         self.resizable(False, False)
+        self.withdraw()  # Ocultar temporalmente para posicionar sin parpadeos
         
         self.transient(parent)
         self.grab_set()
         
-        # Center the dialog
+        # Center the dialog relative to the application main window
         self.update_idletasks()
-        x = parent.winfo_x() + (parent.winfo_width() // 2) - (width // 2)
-        y = parent.winfo_y() + (parent.winfo_height() // 2) - (height // 2)
-        self.geometry(f"+{x}+{y}")
+        try:
+            root = parent.winfo_toplevel()
+            root.update_idletasks()
+            rx = root.winfo_rootx()
+            ry = root.winfo_rooty()
+            rw = root.winfo_width()
+            rh = root.winfo_height()
+            if rw > 100 and rh > 100:
+                x = rx + (rw // 2) - (width // 2)
+                y = ry + (rh // 2) - (height // 2)
+            else:
+                sw = self.winfo_screenwidth()
+                sh = self.winfo_screenheight()
+                x = (sw // 2) - (width // 2)
+                y = (sh // 2) - (height // 2)
+        except Exception:
+            sw = self.winfo_screenwidth()
+            sh = self.winfo_screenheight()
+            x = (sw // 2) - (width // 2)
+            y = (sh // 2) - (height // 2)
+
+        self.geometry(f"{width}x{height}+{max(0, x)}+{max(0, y)}")
+        self.deiconify()  # Mostrar centrada
         
         self.container = ctk.CTkFrame(self, fg_color=COLORS["bg_panel"])
         self.container.pack(fill="both", expand=True, padx=20, pady=20)
@@ -33,14 +53,14 @@ class BaseDialog(ctk.CTkToplevel):
 
 class ConfirmDialog(BaseDialog):
     def __init__(self, parent, title, message, on_confirm):
-        super().__init__(parent, title=title, width=400, height=220)
+        super().__init__(parent, title=title, width=460, height=230)
         self.on_confirm = on_confirm
         
         msg_label = ctk.CTkLabel(
             self.container, text=message, font=FONTS["body"], text_color=COLORS["text_primary"],
-            wraplength=350
+            wraplength=410, justify="center"
         )
-        msg_label.pack(pady=20)
+        msg_label.pack(expand=True, pady=(10, 20))
         
         btn_frame = ctk.CTkFrame(self.container, fg_color="transparent")
         btn_frame.pack(fill="x", side="bottom", pady=10)

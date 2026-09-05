@@ -4,6 +4,7 @@ from credito_app.database.schema import inicializar_base_datos
 from credito_app.services.cliente_service import ClienteService
 from credito_app.services.credito_service import CreditoService
 from credito_app.services.pago_service import PagoService
+from credito_app.services.reporte_service import ReporteService
 from credito_app.ui.theme import COLORS
 from credito_app.ui.components.sidebar import Sidebar
 from credito_app.ui.components.notifications import NotificationBar
@@ -24,6 +25,7 @@ class App(ctk.CTk):
         self.cliente_service = ClienteService(self.conn)
         self.credito_service = CreditoService(self.conn)
         self.pago_service = PagoService(self.conn)
+        self.reporte_service = ReporteService(self.conn)
         
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)

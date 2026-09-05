@@ -10,8 +10,8 @@ class MetricCard(ctk.CTkFrame):
         accent_color = color if color else COLORS["primary"]
         
         # Accent bar
-        bar = ctk.CTkFrame(self, height=3, fg_color=accent_color, corner_radius=12)
-        bar.place(relx=0, rely=0, relwidth=1.0)
+        self.bar = ctk.CTkFrame(self, height=3, fg_color=accent_color, corner_radius=12)
+        self.bar.place(relx=0, rely=0, relwidth=1.0)
         
         # Internal padding frame
         inner = ctk.CTkFrame(self, fg_color="transparent")
@@ -37,5 +37,7 @@ class MetricCard(ctk.CTkFrame):
         )
         self.value_label.pack(anchor="w", pady=(10, 0))
 
-    def update_value(self, value):
+    def update_value(self, value, color=None):
         self.value_label.configure(text=str(value))
+        if color:
+            self.bar.configure(fg_color=color)
