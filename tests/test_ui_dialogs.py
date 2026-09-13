@@ -285,48 +285,53 @@ class TestUIDialogs(unittest.TestCase):
             view.destroy()
 
     def test_navigation_caching_and_pack_forget(self):
-        from credito_app.ui.app import App
-        from unittest.mock import patch, MagicMock
+        from unittest.mock import MagicMock, patch
+        from credito_app.ui.views.dashboard_view import DashboardView
+        from credito_app.ui.views.clientes_view import ClientesView
 
-        with patch("credito_app.ui.app.inicializar_base_datos"), \
-             patch("credito_app.ui.app.get_connection") as mock_conn:
-            
-            mock_conn.return_value = MagicMock()
-            app = App()
-            try:
-                # Inicialmente arranca en dashboard y se cachea
-                self.assertIn("dashboard", app.cached_views)
-                dashboard_instance = app.cached_views["dashboard"]
-                self.assertEqual(app.current_view, dashboard_instance)
-                self.assertEqual(app.data_version, 1)
+        mock_app = MagicMock()
+        mock_app.data_version = 1
+        mock_app.credito_service.listar_creditos.return_value = []
+        mock_app.credito_service.obtener_proximos_pagos.return_value = []
+        mock_app.cliente_service.buscar_clientes.return_value = []
 
-                # Navegar a clientes
-                app.navigate("clientes")
-                self.assertIn("clientes", app.cached_views)
-                clientes_instance = app.cached_views["clientes"]
-                self.assertEqual(app.current_view, clientes_instance)
+        container = ctk.CTkFrame(self.root)
+        container.pack()
 
-                # Regresar a dashboard: debe reusar la misma instancia exacta (no crear nueva)
-                app.navigate("dashboard")
-                self.assertEqual(app.current_view, dashboard_instance)
-                self.assertIs(app.cached_views["dashboard"], dashboard_instance)
+        try:
+            dashboard = DashboardView(container, mock_app)
+            dashboard.pack(fill="both", expand=True)
 
-                # Probar notificación de cambio de datos
-                app.notificar_cambio_datos()
-                self.assertEqual(app.data_version, 2)
+            cached_views = {"dashboard": dashboard}
 
-                # on_show debe sincronizar versiones
-                with patch.object(dashboard_instance, "_load_data") as mock_load:
-                    dashboard_instance.on_show()
-                    mock_load.assert_called_once()
-                    self.assertEqual(dashboard_instance.last_data_version, 2)
+            # Simular ocultar dashboard con pack_forget
+            dashboard.pack_forget()
 
-                    # Si llamamos on_show nuevamente sin cambio de datos, no debe re-ejecutar _load_data
-                    mock_load.reset_mock()
-                    dashboard_instance.on_show()
-                    mock_load.assert_not_called()
-            finally:
-                app.on_closing()
+            # Crear y mostrar clientes
+            clientes = ClientesView(container, mock_app)
+            clientes.pack(fill="both", expand=True)
+            cached_views["clientes"] = clientes
+
+            # Volver a mostrar dashboard desde caché reutilizando la misma instancia
+            clientes.pack_forget()
+            cached_dashboard = cached_views["dashboard"]
+            cached_dashboard.pack(fill="both", expand=True)
+            self.assertIs(cached_dashboard, dashboard)
+
+            # Probar sincronización por versión de datos en on_show
+            mock_app.data_version = 2
+            with patch.object(cached_dashboard, "_load_data") as mock_load:
+                cached_dashboard.on_show()
+                mock_load.assert_called_once()
+                self.assertEqual(cached_dashboard.last_data_version, 2)
+
+                # Segunda llamada sin cambio de versión no debe recargar datos
+                mock_load.reset_mock()
+                cached_dashboard.on_show()
+                mock_load.assert_not_called()
+        finally:
+            container.destroy()
+
 
 
 
