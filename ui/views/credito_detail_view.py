@@ -175,6 +175,7 @@ class CreditoDetailView(ctk.CTkFrame):
             cuotas_pendientes = [c for c in self.cuotas if c.estado in (EstadoCuota.PENDIENTE, EstadoCuota.PARCIAL)]
             PagoDialog(self, self.credito, cuotas_pendientes, self.app.pago_service, self._on_pago_saved, selected_cuota_id=cuota_id)
 
-    def _on_pago_saved(self):
+    def _on_pago_saved(self, pago=None):
         self.app.show_notification("Pago registrado exitosamente", "success")
         self._load_data()
+

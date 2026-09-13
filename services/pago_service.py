@@ -86,3 +86,40 @@ class PagoService:
     def listar_pagos_con_detalle(self) -> list[dict]:
         """Obtiene todos los pagos con información del cliente y crédito."""
         return self.pago_repo.listar_todos_con_detalle()
+
+    def obtener_pago(self, pago_id: int) -> Optional[Pago]:
+        """Obtiene un pago por su ID."""
+        return self.pago_repo.obtener_por_id(pago_id)
+
+    def obtener_datos_comprobante(self, pago_id: int) -> dict:
+        """Compila y calcula la información financiera completa para el comprobante de pago."""
+        detalle = self.pago_repo.obtener_detalle_pago(pago_id)
+        if not detalle:
+            raise PagoInvalidoError(f"Pago con ID {pago_id} no encontrado.")
+
+        # Cálculos de cuota
+        total_pagado_cuota = self.pago_repo.obtener_total_pagado_cuota(detalle["cuota_id"])
+        cuota_monto = detalle["cuota_monto"]
+        saldo_cuota_despues = max(Decimal("0.00"), cuota_monto - total_pagado_cuota)
+        saldo_cuota_antes = saldo_cuota_despues + detalle["pago_monto"]
+
+        # Cálculos de crédito global
+        total_pagado_credito = self.pago_repo.obtener_total_pagado_credito(detalle["credito_id"])
+        total_pagar_credito = detalle["credito_total_pagar"]
+        saldo_credito_restante = max(Decimal("0.00"), total_pagar_credito - total_pagado_credito)
+        porcentaje_pagado = (
+            (total_pagado_credito / total_pagar_credito * Decimal("100")).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)
+            if total_pagar_credito > 0 else Decimal("0.0")
+        )
+
+        return {
+            **detalle,
+            "numero_recibo": f"REC-{pago_id:05d}",
+            "total_pagado_cuota": total_pagado_cuota,
+            "saldo_cuota_antes": saldo_cuota_antes,
+            "saldo_cuota_despues": saldo_cuota_despues,
+            "total_pagado_credito": total_pagado_credito,
+            "saldo_credito_restante": saldo_credito_restante,
+            "porcentaje_pagado_credito": porcentaje_pagado,
+        }
+

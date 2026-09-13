@@ -5,6 +5,7 @@ from credito_app.services.cliente_service import ClienteService
 from credito_app.services.credito_service import CreditoService
 from credito_app.services.pago_service import PagoService
 from credito_app.services.reporte_service import ReporteService
+from credito_app.services.pdf_service import PDFService
 from credito_app.ui.theme import COLORS
 from credito_app.ui.components.sidebar import Sidebar
 from credito_app.ui.components.notifications import NotificationBar
@@ -26,6 +27,7 @@ class App(ctk.CTk):
         self.credito_service = CreditoService(self.conn)
         self.pago_service = PagoService(self.conn)
         self.reporte_service = ReporteService(self.conn)
+        self.pdf_service = PDFService()
         
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
@@ -87,6 +89,54 @@ class App(ctk.CTk):
             self.notification_bar.show_error(message)
         elif type == "warning":
             self.notification_bar.show_warning(message)
+
+    def generar_comprobante_pago(
+        self,
+        pago_id: int,
+        preguntar_destino: bool = False,
+        abrir_al_terminar: bool = True
+    ):
+        """
+        Genera el comprobante en PDF para el pago indicado.
+        Si preguntar_destino es True, solicita la ubicación al usuario.
+        Si abrir_al_terminar es True, abre el archivo generado en el visor del sistema.
+        """
+        try:
+            datos = self.pago_service.obtener_datos_comprobante(pago_id)
+            ruta_destino = None
+
+            if preguntar_destino:
+                from tkinter import filedialog
+                cliente_slug = self.pdf_service._sanitizar_nombre_archivo(datos.get("cliente_nombre", "Cliente"))
+                num_recibo = datos.get("numero_recibo", f"REC-{pago_id:05d}")
+                fecha_pago = datos["fecha_pago"]
+                fecha_str = fecha_pago.strftime("%Y%m%d") if hasattr(fecha_pago, "strftime") else str(fecha_pago)
+                nombre_defecto = f"Recibo_{num_recibo}_{cliente_slug}_{fecha_str}.pdf"
+
+                ruta_guardar = filedialog.asksaveasfilename(
+                    parent=self,
+                    title="Guardar Comprobante de Pago",
+                    defaultextension=".pdf",
+                    filetypes=[("Archivos PDF", "*.pdf"), ("Todos los archivos", "*.*")],
+                    initialfile=nombre_defecto,
+                    initialdir=str(self.pdf_service.output_dir)
+                )
+                if not ruta_guardar:
+                    return None
+                ruta_destino = ruta_guardar
+
+            pdf_path = self.pdf_service.generar_comprobante_pago(datos, output_path=ruta_destino)
+
+            if abrir_al_terminar:
+                self.pdf_service.abrir_documento(pdf_path)
+
+            self.show_notification(f"Comprobante generado: {pdf_path.name}", "success")
+            return str(pdf_path)
+
+        except Exception as e:
+            self.show_notification(f"Error al generar comprobante: {str(e)}", "error")
+            return None
+
             
     def on_closing(self):
         if self.conn:

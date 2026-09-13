@@ -1,5 +1,6 @@
 import customtkinter as ctk
 from decimal import Decimal
+from datetime import date, datetime
 from credito_app.ui.theme import COLORS, FONTS
 from credito_app.ui.utils.formatters import formato_moneda, formato_fecha
 from credito_app.ui.utils.validators import validar_texto_no_vacio, validar_monto, parsear_monto
@@ -194,8 +195,9 @@ class ClienteDialog(BaseDialog):
 
 
 class PagoDialog(BaseDialog):
-    def __init__(self, parent, credito, cuotas, pago_service, on_save, selected_cuota_id=None):
-        super().__init__(parent, title="Registrar Pago", width=480, height=640)
+    def __init__(self, parent, credito, cuotas, pago_service, on_save, selected_cuota_id=None, app=None):
+        super().__init__(parent, title="Registrar Pago", width=480, height=670)
+        self.app = app or getattr(parent, "app", None)
         self.credito = credito
         self.cuotas = [c for c in cuotas if c.estado in (EstadoCuota.PENDIENTE, EstadoCuota.PARCIAL)]
         self.pago_service = pago_service
@@ -238,7 +240,7 @@ class PagoDialog(BaseDialog):
         total_pagado = sum((p.monto for p in pagos), start=Decimal("0"))
         saldo = self.credito.total_pagar - total_pagado
         info_text = f"Crédito #{self.credito.id}   •   Saldo: {formato_moneda(saldo)}"
-        ctk.CTkLabel(self.container, text=info_text, font=FONTS["body_bold"], text_color=COLORS["primary"], justify="left").pack(anchor="w", pady=(0, 15))
+        ctk.CTkLabel(self.container, text=info_text, font=FONTS["body_bold"], text_color=COLORS["primary"], justify="left").pack(anchor="w", pady=(0, 12))
         
         if not self.cuotas:
             ctk.CTkLabel(self.container, text="No hay cuotas pendientes.", text_color=COLORS["warning"]).pack(pady=20)
@@ -249,25 +251,36 @@ class PagoDialog(BaseDialog):
             self.container, values=list(self.cuota_map.keys()),
             command=self._on_cuota_selected, width=440, height=36
         )
-        self.cuota_selector.pack(fill="x", pady=(5, 12))
+        self.cuota_selector.pack(fill="x", pady=(4, 10))
         
         self.info_frame = ctk.CTkFrame(self.container, fg_color=COLORS["row_alt"], corner_radius=8)
-        self.info_frame.pack(fill="x", pady=(0, 15))
+        self.info_frame.pack(fill="x", pady=(0, 12))
         
         self.lbl_valor = ctk.CTkLabel(self.info_frame, text="Valor de cuota: $0", font=FONTS["body"])
-        self.lbl_valor.pack(anchor="w", padx=12, pady=(10, 2))
+        self.lbl_valor.pack(anchor="w", padx=12, pady=(8, 2))
         
         self.lbl_pagado = ctk.CTkLabel(self.info_frame, text="Pagado: $0", font=FONTS["body"], text_color=COLORS["success"])
         self.lbl_pagado.pack(anchor="w", padx=12, pady=2)
         
         self.lbl_pendiente = ctk.CTkLabel(self.info_frame, text="Pendiente: $0", font=FONTS["body_bold"], text_color=COLORS["error"])
-        self.lbl_pendiente.pack(anchor="w", padx=12, pady=(2, 10))
+        self.lbl_pendiente.pack(anchor="w", padx=12, pady=(2, 8))
         
-        ctk.CTkLabel(self.container, text="Monto a Pagar", font=FONTS["label"]).pack(anchor="w", pady=(0, 5))
+        ctk.CTkLabel(self.container, text="Monto a Pagar", font=FONTS["label"]).pack(anchor="w", pady=(0, 4))
         self.monto_entry = ctk.CTkEntry(self.container, width=440, height=36, font=FONTS["input"])
-        self.monto_entry.pack(fill="x", pady=(0, 5))
+        self.monto_entry.pack(fill="x", pady=(0, 4))
         self.err_monto = ctk.CTkLabel(self.container, text="", text_color=COLORS["error"], font=FONTS["small"])
-        self.err_monto.pack(anchor="w", pady=(0, 5))
+        self.err_monto.pack(anchor="w", pady=(0, 4))
+
+        # Checkbox para comprobante en PDF
+        self.var_generar_pdf = ctk.BooleanVar(value=True)
+        self.chk_pdf = ctk.CTkCheckBox(
+            self.container,
+            text="Generar y abrir comprobante en PDF",
+            variable=self.var_generar_pdf,
+            font=FONTS["body"],
+            text_color=COLORS["text_primary"]
+        )
+        self.chk_pdf.pack(anchor="w", pady=(4, 0))
         
     def _on_cuota_selected(self, choice: str):
         self.selected_cuota = self.cuota_map.get(choice)
@@ -302,14 +315,147 @@ class PagoDialog(BaseDialog):
             
         monto = parsear_monto(texto)
         try:
-            self.pago_service.registrar_pago(
+            pago = self.pago_service.registrar_pago(
                 credito_id=self.credito.id,
                 cuota_id=self.selected_cuota.id,
                 monto=monto
             )
-            self.on_save()
+
+            # Generar comprobante si la opción está activada
+            if self.var_generar_pdf.get() and self.app and hasattr(self.app, "generar_comprobante_pago"):
+                try:
+                    self.app.generar_comprobante_pago(pago.id, preguntar_destino=False, abrir_al_terminar=True)
+                except Exception as pdf_err:
+                    print(f"Error generando PDF automático: {pdf_err}")
+
+            if callable(self.on_save):
+                try:
+                    self.on_save(pago)
+                except TypeError:
+                    self.on_save()
+
             self.destroy()
         except CrediNodaError as e:
             self.err_monto.configure(text=str(e))
         except Exception as e:
             self.err_monto.configure(text=f"Error al registrar pago: {str(e)}")
+
+
+class DetallePagoDialog(BaseDialog):
+    """Diálogo modal para visualizar el detalle de un pago y generar/exportar su comprobante PDF."""
+
+    def __init__(self, parent, pago_detalle: dict, app):
+        super().__init__(parent, title=f"Pago #{pago_detalle.get('pago_id', '')}", width=480, height=450)
+        self.pago_detalle = pago_detalle
+        self.app = app
+        self._build_ui()
+
+    def _build_ui(self):
+        pago_id = self.pago_detalle.get("pago_id")
+        cliente_nombre = self.pago_detalle.get("cliente_nombre", "-")
+        credito_id = self.pago_detalle.get("credito_id", "-")
+        cuota_num = self.pago_detalle.get("numero_cuota", "-")
+        fecha_pago = self.pago_detalle.get("fecha_pago")
+        fecha_str = formato_fecha(fecha_pago) if isinstance(fecha_pago, (date, datetime)) else str(fecha_pago)
+        monto_str = formato_moneda(self.pago_detalle.get("monto", Decimal("0")))
+
+        # Tarjeta informativa
+        info_card = ctk.CTkFrame(self.container, fg_color=COLORS["row_alt"], corner_radius=8)
+        info_card.pack(fill="x", pady=(0, 15), padx=5)
+
+        ctk.CTkLabel(
+            info_card,
+            text=f"Recibo: REC-{pago_id:05d}",
+            font=FONTS["body_bold"],
+            text_color=COLORS["primary"]
+        ).pack(anchor="w", padx=15, pady=(12, 4))
+
+        ctk.CTkLabel(
+            info_card,
+            text=f"Cliente: {cliente_nombre}",
+            font=FONTS["body"],
+            text_color=COLORS["text_primary"]
+        ).pack(anchor="w", padx=15, pady=2)
+
+        ctk.CTkLabel(
+            info_card,
+            text=f"Crédito: #{credito_id}   •   Cuota: #{cuota_num}",
+            font=FONTS["body"],
+            text_color=COLORS["text_secondary"]
+        ).pack(anchor="w", padx=15, pady=2)
+
+        ctk.CTkLabel(
+            info_card,
+            text=f"Fecha del Pago: {fecha_str}",
+            font=FONTS["body"],
+            text_color=COLORS["text_secondary"]
+        ).pack(anchor="w", padx=15, pady=2)
+
+        ctk.CTkLabel(
+            info_card,
+            text=f"Monto Abonado: {monto_str}",
+            font=FONTS["body_bold"],
+            text_color=COLORS["success"]
+        ).pack(anchor="w", padx=15, pady=(4, 12))
+
+        # Botones de acción principales
+        ctk.CTkButton(
+            self.container,
+            text="📄  Ver / Imprimir Comprobante PDF",
+            fg_color=COLORS["primary"],
+            hover_color=COLORS["primary_hover"],
+            font=FONTS["body_bold"],
+            height=40,
+            command=self._abrir_pdf
+        ).pack(fill="x", pady=(5, 8), padx=5)
+
+        ctk.CTkButton(
+            self.container,
+            text="💾  Guardar Comprobante Como...",
+            fg_color="transparent",
+            border_width=1,
+            border_color=COLORS["primary"],
+            text_color=COLORS["primary"],
+            font=FONTS["body"],
+            height=38,
+            command=self._guardar_pdf_como
+        ).pack(fill="x", pady=(0, 8), padx=5)
+
+        ctk.CTkButton(
+            self.container,
+            text="🔍  Ir al Detalle del Crédito",
+            fg_color="transparent",
+            border_width=1,
+            border_color=COLORS["border"],
+            text_color=COLORS["text_primary"],
+            font=FONTS["body"],
+            height=38,
+            command=self._ir_al_credito
+        ).pack(fill="x", pady=(0, 12), padx=5)
+
+        # Botón Cerrar
+        ctk.CTkButton(
+            self.container,
+            text="Cerrar",
+            fg_color="transparent",
+            text_color=COLORS["text_secondary"],
+            command=self.destroy,
+            height=32
+        ).pack(fill="x", padx=5)
+
+    def _abrir_pdf(self):
+        pago_id = self.pago_detalle.get("pago_id")
+        if self.app and hasattr(self.app, "generar_comprobante_pago"):
+            self.app.generar_comprobante_pago(pago_id, preguntar_destino=False, abrir_al_terminar=True)
+
+    def _guardar_pdf_como(self):
+        pago_id = self.pago_detalle.get("pago_id")
+        if self.app and hasattr(self.app, "generar_comprobante_pago"):
+            self.app.generar_comprobante_pago(pago_id, preguntar_destino=True, abrir_al_terminar=False)
+
+    def _ir_al_credito(self):
+        credito_id = self.pago_detalle.get("credito_id")
+        self.destroy()
+        if self.app and credito_id:
+            self.app.navigate("credito_detail", credito_id=credito_id)
+

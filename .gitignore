@@ -13,3 +13,6 @@ data/*.db
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# Carpeta de comprobantes de pago
+comprobantes/

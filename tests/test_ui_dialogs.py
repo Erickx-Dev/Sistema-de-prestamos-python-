@@ -225,6 +225,65 @@ class TestUIDialogs(unittest.TestCase):
         finally:
             view.destroy()
 
+    def test_pagos_view_busqueda_manual_y_limpiar(self):
+        from decimal import Decimal
+        from datetime import date
+        from credito_app.ui.views.pagos_view import PagosView
+
+        mock_app = MagicMock()
+        mock_app.pago_service.listar_pagos_con_detalle.return_value = [
+            {
+                "pago_id": 14,
+                "credito_id": 1,
+                "cuota_id": 7,
+                "numero_cuota": 2,
+                "fecha_pago": date(2026, 9, 11),
+                "monto": Decimal("92500"),
+                "cliente_nombre": "Erickson Jhair",
+                "cliente_id": 1
+            },
+            {
+                "pago_id": 15,
+                "credito_id": 4,
+                "cuota_id": 12,
+                "numero_cuota": 1,
+                "fecha_pago": date(2026, 9, 11),
+                "monto": Decimal("92500"),
+                "cliente_nombre": "Erickson Jhair",
+                "cliente_id": 1
+            }
+        ]
+
+        view = PagosView(self.root, mock_app)
+        try:
+            # Inicialmente ambos pagos están presentes
+            self.assertEqual(len(view.table.rows), 2)
+
+            # Escribir '4' y ejecutar búsqueda
+            view.search_entry.delete(0, "end")
+            view.search_entry.insert(0, "4")
+            view._on_search()
+
+            # Solo debe mostrar el pago del crédito #4, NO el pago #14 que pertenece al crédito #1
+            self.assertEqual(len(view.table.rows), 1)
+            labels = [w for w in view.table.rows[0].winfo_children() if hasattr(w, "cget") and hasattr(w, "_text")]
+            cell_texts = [w.cget("text") for w in labels]
+            self.assertIn("#4", cell_texts)
+            self.assertNotIn("#1", cell_texts)
+
+            # Probar búsqueda con '#4'
+            view.search_entry.delete(0, "end")
+            view.search_entry.insert(0, "#4")
+            view._on_search()
+            self.assertEqual(len(view.table.rows), 1)
+
+            # Probar botón limpiar
+            view._on_limpiar()
+            self.assertEqual(len(view.table.rows), 2)
+            self.assertEqual(view.search_entry.get(), "")
+        finally:
+            view.destroy()
+
 
 
 
