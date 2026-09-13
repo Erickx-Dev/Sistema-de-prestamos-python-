@@ -15,9 +15,19 @@ class PagosView(ctk.CTkFrame):
         self.pagos_detalle = []
         self.mapa_pagos = {}
         
+        self.last_data_version = getattr(self.app, "data_version", 1)
         self.notification = NotificationBar(self)
         self._build_ui()
         self._load_data()
+
+    def on_show(self, force: bool = False):
+        """Se invoca al mostrar la vista en pantalla. Recarga pagos si los datos cambiaron."""
+        app_version = getattr(self.app, "data_version", 1)
+        if force or self.last_data_version < app_version:
+            self._load_data()
+            if hasattr(self, "search_entry") and self.search_entry.get().strip():
+                self._on_search()
+            self.last_data_version = app_version
 
     def _build_ui(self):
         SectionHeader(

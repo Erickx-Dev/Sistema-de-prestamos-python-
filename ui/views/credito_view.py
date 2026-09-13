@@ -247,6 +247,8 @@ class CreditoView(ctk.CTkScrollableFrame):
                     frecuencia=self._calculated_data["frecuencia"],
                     tasa_mensual=self._calculated_data["tasa"]
                 )
+                if hasattr(self.app, "notificar_cambio_datos"):
+                    self.app.notificar_cambio_datos()
                 self.app.show_notification("Crédito creado exitosamente", "success")
                 self.app.navigate("credito_detail", credito_id=credito.id)
             except CrediNodaError as e:

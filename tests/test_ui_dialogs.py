@@ -284,6 +284,50 @@ class TestUIDialogs(unittest.TestCase):
         finally:
             view.destroy()
 
+    def test_navigation_caching_and_pack_forget(self):
+        from credito_app.ui.app import App
+        from unittest.mock import patch, MagicMock
+
+        with patch("credito_app.ui.app.inicializar_base_datos"), \
+             patch("credito_app.ui.app.get_connection") as mock_conn:
+            
+            mock_conn.return_value = MagicMock()
+            app = App()
+            try:
+                # Inicialmente arranca en dashboard y se cachea
+                self.assertIn("dashboard", app.cached_views)
+                dashboard_instance = app.cached_views["dashboard"]
+                self.assertEqual(app.current_view, dashboard_instance)
+                self.assertEqual(app.data_version, 1)
+
+                # Navegar a clientes
+                app.navigate("clientes")
+                self.assertIn("clientes", app.cached_views)
+                clientes_instance = app.cached_views["clientes"]
+                self.assertEqual(app.current_view, clientes_instance)
+
+                # Regresar a dashboard: debe reusar la misma instancia exacta (no crear nueva)
+                app.navigate("dashboard")
+                self.assertEqual(app.current_view, dashboard_instance)
+                self.assertIs(app.cached_views["dashboard"], dashboard_instance)
+
+                # Probar notificación de cambio de datos
+                app.notificar_cambio_datos()
+                self.assertEqual(app.data_version, 2)
+
+                # on_show debe sincronizar versiones
+                with patch.object(dashboard_instance, "_load_data") as mock_load:
+                    dashboard_instance.on_show()
+                    mock_load.assert_called_once()
+                    self.assertEqual(dashboard_instance.last_data_version, 2)
+
+                    # Si llamamos on_show nuevamente sin cambio de datos, no debe re-ejecutar _load_data
+                    mock_load.reset_mock()
+                    dashboard_instance.on_show()
+                    mock_load.assert_not_called()
+            finally:
+                app.on_closing()
+
 
 
 

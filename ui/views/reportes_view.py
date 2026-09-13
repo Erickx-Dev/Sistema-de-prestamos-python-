@@ -25,9 +25,17 @@ class ReportesView(ctk.CTkScrollableFrame):
         self.current_desde: date | None = None
         self.current_hasta: date | None = None
 
+        self.last_data_version = getattr(self.app, "data_version", 1)
         self.notification = NotificationBar(self)
         self._build_ui()
         self._set_preset("Todos")
+
+    def on_show(self, force: bool = False):
+        """Se invoca al mostrar la vista en pantalla. Refresca métricas y gráficos si los datos cambiaron."""
+        app_version = getattr(self.app, "data_version", 1)
+        if force or self.last_data_version < app_version:
+            self._load_data(self.current_desde, self.current_hasta)
+            self.last_data_version = app_version
 
     def _build_ui(self):
         SectionHeader(self, title="Reportes", subtitle="Métricas y rendimiento financiero").pack(

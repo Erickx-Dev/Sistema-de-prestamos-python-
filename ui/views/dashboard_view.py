@@ -12,9 +12,17 @@ class DashboardView(ctk.CTkFrame):
     def __init__(self, parent, app):
         super().__init__(parent, fg_color=COLORS["bg_main"])
         self.app = app
+        self.last_data_version = getattr(self.app, "data_version", 1)
         self._build_ui()
         self._load_data()
         
+    def on_show(self, force: bool = False):
+        """Se invoca al mostrar la vista en pantalla. Refresca el dashboard si los datos cambiaron."""
+        app_version = getattr(self.app, "data_version", 1)
+        if force or self.last_data_version < app_version:
+            self._load_data()
+            self.last_data_version = app_version
+
     def _build_ui(self):
         self.header = SectionHeader(self, title="Inicio", subtitle="Resumen del sistema")
         self.header.pack(fill="x", pady=(0, 20))

@@ -328,6 +328,9 @@ class PagoDialog(BaseDialog):
                 except Exception as pdf_err:
                     print(f"Error generando PDF automático: {pdf_err}")
 
+            if self.app and hasattr(self.app, "notificar_cambio_datos"):
+                self.app.notificar_cambio_datos()
+
             if callable(self.on_save):
                 try:
                     self.on_save(pago)

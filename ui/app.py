@@ -47,38 +47,72 @@ class App(ctk.CTk):
         self.view_container.grid(row=1, column=0, sticky="nsew", padx=20, pady=20)
         
         self.current_view = None
+        self.current_view_name = None
+        self.current_view_is_dynamic = False
+        self.cached_views = {}
+        self.data_version = 1
+        
         self.navigate("dashboard")
         
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
         
+    def notificar_cambio_datos(self):
+        """Incrementa la versión de datos para que las vistas en caché refresquen su contenido al mostrarse."""
+        self.data_version += 1
+
     def navigate(self, view_name: str, **kwargs):
+        # 1. Ocultar la vista actual si es persistente o destruirla si es dinámica
         if self.current_view:
-            self.current_view.destroy()
+            if self.current_view_name in self.cached_views and not self.current_view_is_dynamic:
+                self.current_view.pack_forget()
+            else:
+                self.current_view.destroy()
+                self.current_view = None
+
+        # 2. Manejo de vistas principales persistentes (sin kwargs)
+        persistent_views = {"dashboard", "clientes", "pagos", "reportes"}
+        
+        if view_name in persistent_views and not kwargs:
+            self.current_view_is_dynamic = False
+            self.current_view_name = view_name
             
-        if view_name == "dashboard":
-            from credito_app.ui.views.dashboard_view import DashboardView
-            self.current_view = DashboardView(self.view_container, self)
-        elif view_name == "clientes":
-            from credito_app.ui.views.clientes_view import ClientesView
-            self.current_view = ClientesView(self.view_container, self)
-        elif view_name == "cliente_detail":
-            from credito_app.ui.views.cliente_detail_view import ClienteDetailView
-            self.current_view = ClienteDetailView(self.view_container, self, **kwargs)
-        elif view_name == "credito_new":
-            from credito_app.ui.views.credito_view import CreditoView
-            self.current_view = CreditoView(self.view_container, self, **kwargs)
-        elif view_name == "credito_detail":
-            from credito_app.ui.views.credito_detail_view import CreditoDetailView
-            self.current_view = CreditoDetailView(self.view_container, self, **kwargs)
-        elif view_name == "pagos":
-            from credito_app.ui.views.pagos_view import PagosView
-            self.current_view = PagosView(self.view_container, self)
-        elif view_name == "reportes":
-            from credito_app.ui.views.reportes_view import ReportesView
-            self.current_view = ReportesView(self.view_container, self)
+            if view_name not in self.cached_views:
+                if view_name == "dashboard":
+                    from credito_app.ui.views.dashboard_view import DashboardView
+                    self.cached_views[view_name] = DashboardView(self.view_container, self)
+                elif view_name == "clientes":
+                    from credito_app.ui.views.clientes_view import ClientesView
+                    self.cached_views[view_name] = ClientesView(self.view_container, self)
+                elif view_name == "pagos":
+                    from credito_app.ui.views.pagos_view import PagosView
+                    self.cached_views[view_name] = PagosView(self.view_container, self)
+                elif view_name == "reportes":
+                    from credito_app.ui.views.reportes_view import ReportesView
+                    self.cached_views[view_name] = ReportesView(self.view_container, self)
             
-        if self.current_view:
+            self.current_view = self.cached_views[view_name]
             self.current_view.pack(fill="both", expand=True)
+            
+            if hasattr(self.current_view, "on_show"):
+                self.current_view.on_show()
+
+        else:
+            # 3. Vistas dinámicas (con parámetros o creación nueva)
+            self.current_view_is_dynamic = True
+            self.current_view_name = view_name
+            
+            if view_name == "cliente_detail":
+                from credito_app.ui.views.cliente_detail_view import ClienteDetailView
+                self.current_view = ClienteDetailView(self.view_container, self, **kwargs)
+            elif view_name == "credito_new":
+                from credito_app.ui.views.credito_view import CreditoView
+                self.current_view = CreditoView(self.view_container, self, **kwargs)
+            elif view_name == "credito_detail":
+                from credito_app.ui.views.credito_detail_view import CreditoDetailView
+                self.current_view = CreditoDetailView(self.view_container, self, **kwargs)
+                
+            if self.current_view:
+                self.current_view.pack(fill="both", expand=True)
             
         self.sidebar.set_active(view_name)
         
@@ -139,6 +173,12 @@ class App(ctk.CTk):
 
             
     def on_closing(self):
+        for view in list(self.cached_views.values()):
+            try:
+                view.destroy()
+            except Exception:
+                pass
+        self.cached_views.clear()
         if self.conn:
             self.conn.close()
         self.destroy()

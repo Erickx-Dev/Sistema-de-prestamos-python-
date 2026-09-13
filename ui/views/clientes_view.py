@@ -10,9 +10,17 @@ class ClientesView(ctk.CTkFrame):
     def __init__(self, parent, app):
         super().__init__(parent, fg_color=COLORS["bg_main"])
         self.app = app
+        self.last_data_version = getattr(self.app, "data_version", 1)
         self._build_ui()
         self._load_data()
         
+    def on_show(self, force: bool = False):
+        """Se invoca al mostrar la vista en pantalla. Recarga clientes si los datos cambiaron."""
+        app_version = getattr(self.app, "data_version", 1)
+        if force or self.last_data_version < app_version:
+            self.refresh()
+            self.last_data_version = app_version
+
     def _build_ui(self):
         self.header = SectionHeader(
             self, 
@@ -67,8 +75,13 @@ class ClientesView(ctk.CTkFrame):
         except Exception:
             self.app.show_notification("Ocurrió un error inesperado.", "error")
             
+    def _on_cliente_guardado(self):
+        if hasattr(self.app, "notificar_cambio_datos"):
+            self.app.notificar_cambio_datos()
+        self.refresh()
+
     def open_cliente_dialog(self):
-        dialog = ClienteDialog(self, self.app.cliente_service, on_save=self.refresh)
+        dialog = ClienteDialog(self, self.app.cliente_service, on_save=self._on_cliente_guardado)
         
     def on_row_click(self, row_data):
         if "id" in row_data:

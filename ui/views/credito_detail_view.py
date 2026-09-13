@@ -176,6 +176,8 @@ class CreditoDetailView(ctk.CTkFrame):
             PagoDialog(self, self.credito, cuotas_pendientes, self.app.pago_service, self._on_pago_saved, selected_cuota_id=cuota_id)
 
     def _on_pago_saved(self, pago=None):
+        if hasattr(self.app, "notificar_cambio_datos"):
+            self.app.notificar_cambio_datos()
         self.app.show_notification("Pago registrado exitosamente", "success")
         self._load_data()
 
