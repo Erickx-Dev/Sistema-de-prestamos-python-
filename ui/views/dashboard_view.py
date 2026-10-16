@@ -74,6 +74,8 @@ class DashboardView(ctk.CTkFrame):
             rows = []
             for pago in proximos_pagos:
                 estado_display = pago["estado"].value if hasattr(pago["estado"], "value") else str(pago["estado"])
+                if pago.get("en_mora"):
+                    estado_display = f"{estado_display} (EN MORA)"
                 rows.append({
                     "id": pago["credito_id"],
                     "cliente": pago["cliente_nombre"],

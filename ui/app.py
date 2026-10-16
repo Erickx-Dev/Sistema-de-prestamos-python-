@@ -1,3 +1,4 @@
+from datetime import date
 import customtkinter as ctk
 from credito_app.database.connection import get_connection
 from credito_app.database.schema import inicializar_base_datos
@@ -28,6 +29,12 @@ class App(ctk.CTk):
         self.pago_service = PagoService(self.conn)
         self.reporte_service = ReporteService(self.conn)
         self.pdf_service = PDFService()
+
+        self._fecha_ultima_verificacion_mora = date.today()
+        try:
+            self.credito_service.actualizar_cuotas_en_mora(self._fecha_ultima_verificacion_mora)
+        except Exception:
+            pass
         
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
@@ -54,7 +61,24 @@ class App(ctk.CTk):
         
         self.navigate("dashboard")
         
+        self._after_verificar_dia_id = self.after(60_000, self._verificar_cambio_dia)
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
+        
+    def _verificar_cambio_dia(self):
+        """Si la app quedó abierta y cambió el día, recalcula la mora y refresca las vistas.
+        Corre en el hilo principal de Tkinter (sin threads) para ser seguro con SQLite."""
+        try:
+            hoy = date.today()
+            if hoy != self._fecha_ultima_verificacion_mora:
+                self._fecha_ultima_verificacion_mora = hoy
+                self.credito_service.actualizar_cuotas_en_mora(hoy)
+                self.notificar_cambio_datos()
+                if self.current_view is not None and hasattr(self.current_view, "on_show"):
+                    self.current_view.on_show()
+        except Exception:
+            pass
+        finally:
+            self._after_verificar_dia_id = self.after(60_000, self._verificar_cambio_dia)
         
     def notificar_cambio_datos(self):
         """Incrementa la versión de datos para que las vistas en caché refresquen su contenido al mostrarse."""
@@ -173,6 +197,10 @@ class App(ctk.CTk):
 
             
     def on_closing(self):
+        try:
+            self.after_cancel(self._after_verificar_dia_id)
+        except Exception:
+            pass
         for view in list(self.cached_views.values()):
             try:
                 view.destroy()

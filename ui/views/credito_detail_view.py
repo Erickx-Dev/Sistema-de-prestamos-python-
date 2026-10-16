@@ -136,9 +136,9 @@ class CreditoDetailView(ctk.CTkFrame):
                     "monto": formato_moneda(cuota.monto),
                     "pagado": formato_moneda(pagado),
                     "pendiente": formato_moneda(pendiente),
-                    "estado": cuota.estado.value,
+                    "estado": cuota.etiqueta_estado,
                     "__estado_raw": cuota.estado,
-                    "__bg_color": color_estado_cuota(cuota.estado)
+                    "__bg_color": COLORS["error"] if cuota.en_mora else color_estado_cuota(cuota.estado)
                 })
                 
             self.table.set_data(rows)

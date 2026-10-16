@@ -122,7 +122,8 @@ class CreditoService:
                 numero_cuota=i,
                 fecha_vencimiento=fecha_vencimiento,
                 monto=monto,
-                estado=EstadoCuota.PENDIENTE
+                estado=EstadoCuota.PENDIENTE,
+                en_mora=fecha_vencimiento < date.today()
             )
             cuotas.append(cuota)
 
@@ -170,6 +171,15 @@ class CreditoService:
     def listar_creditos(self) -> list[Credito]:
         """Obtiene todos los créditos del sistema."""
         return self.credito_repo.listar_todos()
+
+    def actualizar_cuotas_en_mora(self, fecha_referencia: Optional[date] = None) -> int:
+        """Marca en mora las cuotas PENDIENTE/PARCIAL vencidas, conservando su estado de pago.
+
+        El estado del crédito no se modifica: un crédito con cuotas en mora sigue ACTIVO.
+        Retorna la cantidad de cuotas cuyo indicador de mora cambió.
+        """
+        fecha = fecha_referencia if fecha_referencia is not None else date.today()
+        return self.credito_repo.actualizar_mora_cuotas(fecha)
 
     def obtener_proximos_pagos(self, limite: int = 10) -> list[dict]:
         """Obtiene las próximas cuotas pendientes con información del cliente."""

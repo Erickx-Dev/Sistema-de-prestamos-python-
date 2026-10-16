@@ -203,7 +203,7 @@ class PagoDialog(BaseDialog):
         self.pago_service = pago_service
         self.on_save = on_save
         
-        self.cuota_map = {f"Cuota #{c.numero_cuota} - {formato_moneda(c.monto)} - {c.estado.value}": c for c in self.cuotas}
+        self.cuota_map = {f"Cuota #{c.numero_cuota} - {formato_moneda(c.monto)} - {c.etiqueta_estado}": c for c in self.cuotas}
         self.selected_cuota = None
         
         self._build_form()

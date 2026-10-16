@@ -37,9 +37,14 @@ def crear_tablas(conn: sqlite3.Connection) -> None:
             fecha_vencimiento TEXT NOT NULL,
             monto TEXT NOT NULL,
             estado TEXT NOT NULL DEFAULT 'PENDIENTE',
+            en_mora INTEGER NOT NULL DEFAULT 0,
             FOREIGN KEY (credito_id) REFERENCES creditos(id)
         )
     """)
+
+    columnas = [row[1] for row in conn.execute("PRAGMA table_info(cuotas)").fetchall()]
+    if "en_mora" not in columnas:
+        conn.execute("ALTER TABLE cuotas ADD COLUMN en_mora INTEGER NOT NULL DEFAULT 0")
     
     conn.execute("""
         CREATE TABLE IF NOT EXISTS pagos (

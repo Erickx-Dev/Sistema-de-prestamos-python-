@@ -37,7 +37,8 @@ class CreditoRepository:
             numero_cuota=row["numero_cuota"],
             fecha_vencimiento=date.fromisoformat(row["fecha_vencimiento"]),
             monto=Decimal(row["monto"]),
-            estado=EstadoCuota(row["estado"])
+            estado=EstadoCuota(row["estado"]),
+            en_mora=bool(row["en_mora"])
         )
 
     def crear(self, credito: Credito) -> Credito:
@@ -98,8 +99,8 @@ class CreditoRepository:
         """Crea una nueva cuota en la base de datos."""
         cursor = self.conn.cursor()
         query = """
-            INSERT INTO cuotas (credito_id, numero_cuota, fecha_vencimiento, monto, estado)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO cuotas (credito_id, numero_cuota, fecha_vencimiento, monto, estado, en_mora)
+            VALUES (?, ?, ?, ?, ?, ?)
         """
         cursor.execute(
             query,
@@ -108,7 +109,8 @@ class CreditoRepository:
                 cuota.numero_cuota,
                 cuota.fecha_vencimiento.isoformat(),
                 str(cuota.monto),
-                cuota.estado.value
+                cuota.estado.value,
+                1 if cuota.en_mora else 0
             )
         )
         self.conn.commit()
@@ -134,11 +136,43 @@ class CreditoRepository:
         return None
 
     def actualizar_estado_cuota(self, cuota_id: int, estado: EstadoCuota) -> None:
-        """Actualiza el estado de una cuota."""
+        """Actualiza el estado de una cuota. Si queda PAGADA, deja de estar en mora."""
         cursor = self.conn.cursor()
-        query = "UPDATE cuotas SET estado = ? WHERE id = ?"
-        cursor.execute(query, (estado.value, cuota_id))
+        query = """
+            UPDATE cuotas
+            SET estado = ?,
+                en_mora = CASE WHEN ? = 'PAGADA' THEN 0 ELSE en_mora END
+            WHERE id = ?
+        """
+        cursor.execute(query, (estado.value, estado.value, cuota_id))
         self.conn.commit()
+
+    def actualizar_mora_cuotas(self, fecha_referencia: date) -> int:
+        """Sincroniza el indicador en_mora de todas las cuotas.
+
+        Marca en_mora = 1 en cuotas PENDIENTE o PARCIAL con fecha_vencimiento anterior a
+        fecha_referencia (conservando su estado), y en_mora = 0 en el resto.
+        Retorna la cantidad de cuotas cuyo indicador cambió.
+        """
+        cursor = self.conn.cursor()
+        fecha_str = fecha_referencia.isoformat()
+        cursor.execute(
+            """
+            UPDATE cuotas
+            SET en_mora = CASE
+                WHEN estado IN ('PENDIENTE', 'PARCIAL') AND fecha_vencimiento < ? THEN 1
+                ELSE 0
+            END
+            WHERE en_mora != CASE
+                WHEN estado IN ('PENDIENTE', 'PARCIAL') AND fecha_vencimiento < ? THEN 1
+                ELSE 0
+            END
+            """,
+            (fecha_str, fecha_str)
+        )
+        afectadas = cursor.rowcount
+        self.conn.commit()
+        return afectadas
 
     def listar_todos(self) -> list[Credito]:
         """Obtiene todos los créditos del sistema."""
@@ -159,7 +193,7 @@ class CreditoRepository:
         cursor = self.conn.cursor()
         query = """
             SELECT c.id as cuota_id, c.credito_id, c.numero_cuota, c.fecha_vencimiento,
-                   c.monto, c.estado, cl.nombre as cliente_nombre, cl.id as cliente_id
+                   c.monto, c.estado, c.en_mora, cl.nombre as cliente_nombre, cl.id as cliente_id
             FROM cuotas c
             JOIN creditos cr ON c.credito_id = cr.id
             JOIN clientes cl ON cr.cliente_id = cl.id
@@ -177,6 +211,7 @@ class CreditoRepository:
                 "fecha_vencimiento": date.fromisoformat(row["fecha_vencimiento"]),
                 "monto": Decimal(row["monto"]),
                 "estado": EstadoCuota(row["estado"]),
+                "en_mora": bool(row["en_mora"]),
                 "cliente_nombre": row["cliente_nombre"],
                 "cliente_id": row["cliente_id"],
             })
