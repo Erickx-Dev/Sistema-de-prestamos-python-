@@ -7,6 +7,7 @@ from credito_app.services.credito_service import CreditoService
 from credito_app.services.pago_service import PagoService
 from credito_app.services.reporte_service import ReporteService
 from credito_app.services.pdf_service import PDFService
+from credito_app.services.backup_service import BackupService
 from credito_app.ui.theme import COLORS
 from credito_app.ui.components.sidebar import Sidebar
 from credito_app.ui.components.notifications import NotificationBar
@@ -23,12 +24,12 @@ class App(ctk.CTk):
         self.minsize(1000, 600)
 
         from credito_app.config import ICON_PATH
+
         if ICON_PATH.exists():
             try:
                 self.iconbitmap(str(ICON_PATH))
             except Exception:
                 pass
-
 
         inicializar_base_datos(db_path)
         self.conn = get_connection(db_path)
@@ -38,6 +39,7 @@ class App(ctk.CTk):
         self.pago_service = PagoService(self.conn)
         self.reporte_service = ReporteService(self.conn)
         self.pdf_service = PDFService()
+        self.backup_service = BackupService(self.conn)
 
         self._fecha_ultima_verificacion_mora = date.today()
         try:
@@ -48,7 +50,7 @@ class App(ctk.CTk):
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
 
-        self.sidebar = Sidebar(self, on_navigate=self.navigate)
+        self.sidebar = Sidebar(self, on_navigate=self.navigate, on_backup=self.abrir_dialogo_backup)
         self.sidebar.grid(row=0, column=0, sticky="nsew")
 
         self.content_frame = ctk.CTkFrame(self, fg_color=COLORS["bg_main"], corner_radius=0)
@@ -207,7 +209,14 @@ class App(ctk.CTk):
             self.show_notification(f"Error al generar comprobante: {str(e)}", "error")
             return None
 
+    def abrir_dialogo_backup(self):
+        """Abre el diálogo modal de Copia de Seguridad y Restauración."""
+        from credito_app.ui.components.dialogs import BackupDialog
+
+        return BackupDialog(self, self.backup_service, app=self)
+
     def on_closing(self):
+
         try:
             self.after_cancel(self._after_verificar_dia_id)
         except Exception:

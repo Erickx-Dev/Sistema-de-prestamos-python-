@@ -9,6 +9,7 @@ omit = [
     "credito_app/tests/*",
     "credito_app/comprobantes/*",
     "credito_app/main.py",
+    "credito_app/build_exe.py",
 ]
 
 [tool.coverage.report]

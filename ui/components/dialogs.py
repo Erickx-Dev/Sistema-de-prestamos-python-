@@ -15,8 +15,20 @@ class BaseDialog(ctk.CTkToplevel):
         self.resizable(False, False)
         self.withdraw()  # Ocultar temporalmente para posicionar sin parpadeos
 
+        from credito_app.config import ICON_PATH
+
+        if ICON_PATH.exists():
+            try:
+                self.iconbitmap(str(ICON_PATH))
+            except Exception:
+                pass
+
         self.transient(parent)
-        self.grab_set()
+        try:
+            self.grab_set()
+        except Exception:
+            pass
+
 
         # Center the dialog relative to the application main window
         self.update_idletasks()
@@ -465,3 +477,212 @@ class DetallePagoDialog(BaseDialog):
         self.destroy()
         if self.app and credito_id:
             self.app.navigate("credito_detail", credito_id=credito_id)
+
+
+class BackupDialog(BaseDialog):
+    """Modal para crear copias de seguridad y restaurar la base de datos creditos.db."""
+
+    def __init__(self, parent, backup_service, app=None):
+        super().__init__(parent, title="Copia de Seguridad y Restauración", width=480, height=490)
+        self.backup_service = backup_service
+        self.app = app
+
+        # Sección 1: Crear Copia de Seguridad
+        export_card = ctk.CTkFrame(
+            self.container,
+            fg_color=COLORS["bg_main"],
+            corner_radius=8,
+            border_width=1,
+            border_color=COLORS["border"],
+        )
+        export_card.pack(fill="x", pady=(0, 14), padx=2)
+
+        ctk.CTkLabel(
+            export_card,
+            text="💾  Crear Copia de Seguridad",
+            font=FONTS["body_bold"],
+            text_color=COLORS["text_primary"],
+        ).pack(anchor="w", padx=14, pady=(12, 4))
+
+        ctk.CTkLabel(
+            export_card,
+            text="Guarda una copia íntegra de todos los clientes, créditos, cuotas y pagos.",
+            font=FONTS["small"],
+            text_color=COLORS["text_secondary"],
+            wraplength=410,
+            justify="left",
+        ).pack(anchor="w", padx=14, pady=(0, 6))
+
+        self.lbl_ultimo_backup = ctk.CTkLabel(
+            export_card,
+            text="",
+            font=FONTS["small"],
+            text_color=COLORS["primary"],
+        )
+        self.lbl_ultimo_backup.pack(anchor="w", padx=14, pady=(0, 10))
+        self._actualizar_info_backups()
+
+        self.btn_respaldo_rapido = ctk.CTkButton(
+            export_card,
+            text="⚡  Crear Respaldo Rápido (Carpeta Backups)",
+            fg_color=COLORS["primary"],
+            hover_color=COLORS["primary_hover"],
+            font=FONTS["body_bold"],
+            height=38,
+            command=self._crear_respaldo_rapido,
+        )
+        self.btn_respaldo_rapido.pack(fill="x", padx=14, pady=(0, 8))
+
+        self.btn_guardar_como = ctk.CTkButton(
+            export_card,
+            text="📁  Guardar Copia En Otra Ubicación...",
+            fg_color="transparent",
+            border_width=1,
+            border_color=COLORS["primary"],
+            text_color=COLORS["primary"],
+            font=FONTS["body"],
+            height=36,
+            command=self._guardar_copia_como,
+        )
+        self.btn_guardar_como.pack(fill="x", padx=14, pady=(0, 12))
+
+        # Sección 2: Restaurar Base de Datos
+        restore_card = ctk.CTkFrame(
+            self.container,
+            fg_color=COLORS["bg_main"],
+            corner_radius=8,
+            border_width=1,
+            border_color=COLORS["border"],
+        )
+        restore_card.pack(fill="x", pady=(0, 14), padx=2)
+
+        ctk.CTkLabel(
+            restore_card,
+            text="🔄  Restaurar Base de Datos",
+            font=FONTS["body_bold"],
+            text_color=COLORS["text_primary"],
+        ).pack(anchor="w", padx=14, pady=(12, 4))
+
+        ctk.CTkLabel(
+            restore_card,
+            text=(
+                "Reemplaza la información actual con un archivo .db respaldado previamente. "
+                "Antes de restaurar, el sistema guardará un respaldo preventivo automático."
+            ),
+            font=FONTS["small"],
+            text_color=COLORS["text_secondary"],
+            wraplength=410,
+            justify="left",
+        ).pack(anchor="w", padx=14, pady=(0, 10))
+
+        self.btn_restaurar = ctk.CTkButton(
+            restore_card,
+            text="📂  Seleccionar Archivo .db y Restaurar...",
+            fg_color=COLORS["warning"],
+            hover_color="#D97706",
+            text_color="#FFFFFF",
+            font=FONTS["body_bold"],
+            height=38,
+            command=self._seleccionar_y_restaurar,
+        )
+        self.btn_restaurar.pack(fill="x", padx=14, pady=(0, 12))
+
+        # Botón Cerrar
+        ctk.CTkButton(
+            self.container,
+            text="Cerrar",
+            fg_color="transparent",
+            text_color=COLORS["text_secondary"],
+            command=self.destroy,
+            height=32,
+        ).pack(fill="x", padx=2)
+
+    def _actualizar_info_backups(self):
+        backups = self.backup_service.listar_backups()
+        if backups:
+            ultimo = backups[0]
+            fecha_str = ultimo["fecha"].strftime("%d/%m/%Y %H:%M")
+            self.lbl_ultimo_backup.configure(text=f"Último respaldo local: {ultimo['nombre']} ({fecha_str})")
+        else:
+            self.lbl_ultimo_backup.configure(text="Sin respaldos locales aún en la carpeta backups/")
+
+    def _crear_respaldo_rapido(self):
+        try:
+            ruta = self.backup_service.crear_backup()
+            self._actualizar_info_backups()
+            if self.app:
+                self.app.show_notification(f"Copia de seguridad creada: {ruta.name}", "success")
+            return ruta
+        except CrediNodaError as e:
+            if self.app:
+                self.app.show_notification(str(e), "error")
+            return None
+
+    def _guardar_copia_como(self):
+        from tkinter import filedialog
+
+        nombre_defecto = f"creditos_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
+        ruta_guardar = filedialog.asksaveasfilename(
+            parent=self,
+            title="Guardar Copia de Seguridad",
+            defaultextension=".db",
+            filetypes=[("Base de datos SQLite", "*.db"), ("Todos los archivos", "*.*")],
+            initialfile=nombre_defecto,
+            initialdir=str(self.backup_service.backups_dir),
+        )
+        if not ruta_guardar:
+            return None
+
+        try:
+            ruta = self.backup_service.crear_backup(destino=ruta_guardar)
+            self._actualizar_info_backups()
+            if self.app:
+                self.app.show_notification(f"Copia guardada en: {ruta.name}", "success")
+            return ruta
+        except CrediNodaError as e:
+            if self.app:
+                self.app.show_notification(str(e), "error")
+            return None
+
+    def _seleccionar_y_restaurar(self):
+        from tkinter import filedialog
+
+        ruta_abrir = filedialog.askopenfilename(
+            parent=self,
+            title="Seleccionar Copia de Seguridad para Restaurar",
+            filetypes=[("Base de datos SQLite", "*.db"), ("Todos los archivos", "*.*")],
+            initialdir=str(self.backup_service.backups_dir),
+        )
+        if not ruta_abrir:
+            return
+
+        ConfirmDialog(
+            self,
+            title="Confirmar Restauración",
+            message=(
+                "¿Está seguro de restaurar esta copia de seguridad?\n"
+                "Se creará un respaldo preventivo automático antes de reemplazar los datos actuales."
+            ),
+            on_confirm=lambda: self._ejecutar_restauracion(ruta_abrir),
+        )
+
+    def _ejecutar_restauracion(self, ruta_archivo: str):
+        try:
+            self.backup_service.restaurar_backup(ruta_archivo)
+            if self.app:
+                try:
+                    self.app.credito_service.actualizar_cuotas_en_mora(date.today())
+                except Exception:
+                    pass
+                self.app.notificar_cambio_datos()
+                if self.app.current_view and hasattr(self.app.current_view, "on_show"):
+                    self.app.current_view.on_show(force=True)
+                elif self.app.current_view_name:
+                    self.app.navigate(self.app.current_view_name)
+                self.app.show_notification("Base de datos restaurada exitosamente.", "success")
+            self.destroy()
+            return True
+        except CrediNodaError as e:
+            if self.app:
+                self.app.show_notification(str(e), "error")
+            return False
