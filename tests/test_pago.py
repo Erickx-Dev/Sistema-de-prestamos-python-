@@ -1,6 +1,5 @@
 import sqlite3
 import unittest
-from datetime import date
 from decimal import Decimal
 
 from credito_app.database.schema import crear_tablas
@@ -9,11 +8,8 @@ from credito_app.services.cliente_service import ClienteService
 from credito_app.services.credito_service import CreditoService
 from credito_app.services.pago_service import PagoService
 from credito_app.modules.credito import FrecuenciaPago, EstadoCredito, EstadoCuota
-from credito_app.modules.excepciones import (
-    CuotaNoEncontradaError,
-    MontoInvalidoError,
-    PagoInvalidoError
-)
+from credito_app.modules.excepciones import CuotaNoEncontradaError, MontoInvalidoError, PagoInvalidoError
+
 
 def get_test_connection() -> sqlite3.Connection:
     conn = get_connection(":memory:")
@@ -21,13 +17,14 @@ def get_test_connection() -> sqlite3.Connection:
     conn.commit()
     return conn
 
+
 class TestPagoService(unittest.TestCase):
     def setUp(self):
         self.conn = get_test_connection()
         self.cliente_svc = ClienteService(self.conn)
         self.credito_svc = CreditoService(self.conn)
         self.pago_svc = PagoService(self.conn)
-        
+
         self.cliente = self.cliente_svc.crear_cliente("Cliente Prueba", "0000", "DOC1")
         self.credito = self.credito_svc.crear_credito(self.cliente.id, Decimal("1000000"), 3, FrecuenciaPago.SEMANAL)
         self.plan = self.credito_svc.obtener_plan_pagos(self.credito.id)
@@ -38,7 +35,7 @@ class TestPagoService(unittest.TestCase):
     def test_pago_completo(self):
         cuota = self.plan[0]
         self.pago_svc.registrar_pago(self.credito.id, cuota.id, cuota.monto)
-        
+
         plan_actualizado = self.credito_svc.obtener_plan_pagos(self.credito.id)
         self.assertEqual(plan_actualizado[0].estado, EstadoCuota.PAGADA)
         pagos = self.pago_svc.obtener_pagos_cuota(cuota.id)
@@ -49,7 +46,7 @@ class TestPagoService(unittest.TestCase):
         cuota = self.plan[0]
         monto_pago = Decimal("50000")
         self.pago_svc.registrar_pago(self.credito.id, cuota.id, monto_pago)
-        
+
         plan_actualizado = self.credito_svc.obtener_plan_pagos(self.credito.id)
         self.assertEqual(plan_actualizado[0].estado, EstadoCuota.PARCIAL)
         pagos = self.pago_svc.obtener_pagos_cuota(cuota.id)
@@ -61,7 +58,7 @@ class TestPagoService(unittest.TestCase):
         monto_pago = cuota.monto / 2
         self.pago_svc.registrar_pago(self.credito.id, cuota.id, monto_pago)
         self.pago_svc.registrar_pago(self.credito.id, cuota.id, monto_pago)
-        
+
         plan_actualizado = self.credito_svc.obtener_plan_pagos(self.credito.id)
         self.assertEqual(plan_actualizado[0].estado, EstadoCuota.PAGADA)
         pagos = self.pago_svc.obtener_pagos_cuota(cuota.id)
@@ -74,7 +71,7 @@ class TestPagoService(unittest.TestCase):
         monto_pago_2 = cuota.monto - monto_pago_1
         self.pago_svc.registrar_pago(self.credito.id, cuota.id, monto_pago_1)
         self.pago_svc.registrar_pago(self.credito.id, cuota.id, monto_pago_2)
-        
+
         plan_actualizado = self.credito_svc.obtener_plan_pagos(self.credito.id)
         self.assertEqual(plan_actualizado[0].estado, EstadoCuota.PAGADA)
 
@@ -82,7 +79,7 @@ class TestPagoService(unittest.TestCase):
         self.pago_svc.registrar_pago(self.credito.id, self.plan[0].id, self.plan[0].monto)
         self.pago_svc.registrar_pago(self.credito.id, self.plan[1].id, self.plan[1].monto)
         self.pago_svc.registrar_pago(self.credito.id, self.plan[2].id, self.plan[2].monto)
-        
+
         plan = self.credito_svc.obtener_plan_pagos(self.credito.id)
         self.assertEqual(plan[0].estado, EstadoCuota.PAGADA)
         self.assertEqual(plan[1].estado, EstadoCuota.PAGADA)
@@ -114,7 +111,7 @@ class TestPagoService(unittest.TestCase):
     def test_historial_pagos(self):
         self.pago_svc.registrar_pago(self.credito.id, self.plan[0].id, self.plan[0].monto)
         self.pago_svc.registrar_pago(self.credito.id, self.plan[1].id, Decimal("50000"))
-        
+
         pagos = self.pago_svc.obtener_historial_pagos(self.credito.id)
         self.assertEqual(len(pagos), 2)
 
@@ -122,12 +119,12 @@ class TestPagoService(unittest.TestCase):
         cuota = self.plan[0]
         # PENDIENTE
         self.assertEqual(cuota.estado, EstadoCuota.PENDIENTE)
-        
+
         # PARCIAL
         self.pago_svc.registrar_pago(self.credito.id, cuota.id, Decimal("10000"))
         plan = self.credito_svc.obtener_plan_pagos(self.credito.id)
         self.assertEqual(plan[0].estado, EstadoCuota.PARCIAL)
-        
+
         # PAGADA
         restante = cuota.monto - Decimal("10000")
         self.pago_svc.registrar_pago(self.credito.id, cuota.id, restante)
@@ -137,12 +134,13 @@ class TestPagoService(unittest.TestCase):
     def test_credito_pasa_a_pagado(self):
         for cuota in self.plan:
             self.pago_svc.registrar_pago(self.credito.id, cuota.id, cuota.monto)
-            
+
         estado = self.credito_svc.determinar_estado_credito(self.credito.id)
         self.assertEqual(estado, EstadoCredito.PAGADO)
 
     def test_pago_cuota_con_decimales_exacto(self):
         from credito_app.ui.utils.validators import parsear_monto
+
         # Simular exactamente el caso del usuario: capital 100000, 3 meses, semanal (12 cuotas -> 11333.33)
         credito = self.credito_svc.crear_credito(self.cliente.id, Decimal("100000"), 3, FrecuenciaPago.SEMANAL)
         cuotas = self.credito_svc.obtener_plan_pagos(credito.id)
@@ -163,6 +161,7 @@ class TestPagoService(unittest.TestCase):
 
     def test_pago_parcial_inferior_con_decimales(self):
         from credito_app.ui.utils.validators import parsear_monto
+
         credito = self.credito_svc.crear_credito(self.cliente.id, Decimal("100000"), 3, FrecuenciaPago.SEMANAL)
         cuotas = self.credito_svc.obtener_plan_pagos(credito.id)
         cuota1 = cuotas[0]
@@ -199,5 +198,3 @@ class TestPagoService(unittest.TestCase):
         self.assertEqual(pago_detalle["cuota_id"], plan[0].id)
         self.assertEqual(pago_detalle["numero_cuota"], 1)
         self.assertEqual(pago_detalle["monto"], Decimal("100000"))
-
-

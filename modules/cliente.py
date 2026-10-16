@@ -2,9 +2,11 @@ from dataclasses import dataclass, field
 from datetime import date
 from typing import Optional
 
+
 @dataclass
 class Cliente:
     """Representa un cliente del sistema de créditos."""
+
     nombre: str
     telefono: str
     documento: str

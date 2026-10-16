@@ -4,6 +4,7 @@ from unittest.mock import MagicMock
 from credito_app.ui.components.dialogs import ConfirmDialog
 from credito_app.ui.components.notifications import NotificationBar
 
+
 class TestUIDialogs(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -16,21 +17,22 @@ class TestUIDialogs(unittest.TestCase):
 
     def test_confirm_dialog_disables_button_and_destroys(self):
         called = False
+
         def on_confirm_callback():
             nonlocal called
             called = True
 
         dialog = ConfirmDialog(self.root, title="Test", message="Test message", on_confirm=on_confirm_callback)
-        
+
         # Verify confirm button exists and is normal
         self.assertEqual(dialog.confirm_btn.cget("state"), "normal")
-        
+
         # Trigger confirm
         dialog._confirm()
-        
+
         # Verify callback was executed
         self.assertTrue(called)
-        
+
         # Verify dialog window is destroyed / not viewable
         self.assertFalse(dialog.winfo_exists())
 
@@ -65,7 +67,7 @@ class TestUIDialogs(unittest.TestCase):
 
         mock_app = MagicMock()
         mock_app.cliente_service.buscar_clientes.return_value = []
-        
+
         dummy_credito = Credito(
             id=42,
             cliente_id=1,
@@ -76,7 +78,7 @@ class TestUIDialogs(unittest.TestCase):
             total_pagar=Decimal("1360000"),
             frecuencia_pago=FrecuenciaPago.QUINCENAL,
             fecha_inicio=date.today(),
-            estado=EstadoCredito.ACTIVO
+            estado=EstadoCredito.ACTIVO,
         )
         mock_app.credito_service.crear_credito.return_value = dummy_credito
 
@@ -87,16 +89,18 @@ class TestUIDialogs(unittest.TestCase):
             "plazo": 3,
             "frecuencia": FrecuenciaPago.QUINCENAL,
             "tasa": Decimal("0.12"),
-            "num_cuotas": 6
+            "num_cuotas": 6,
         }
 
         # Mock ConfirmDialog to verify on_confirm execution
         captured_on_confirm = None
+
         def mock_confirm_dialog(parent, title, message, on_confirm):
             nonlocal captured_on_confirm
             captured_on_confirm = on_confirm
 
         import credito_app.ui.views.credito_view as cv_mod
+
         orig_dialog = cv_mod.ConfirmDialog
         cv_mod.ConfirmDialog = mock_confirm_dialog
         try:
@@ -104,7 +108,7 @@ class TestUIDialogs(unittest.TestCase):
             self.assertIsNotNone(captured_on_confirm)
             # Execute the confirm action
             captured_on_confirm()
-            
+
             # Verify credito_service.crear_credito was called
             mock_app.credito_service.crear_credito.assert_called_once()
             # Verify success notification was shown
@@ -132,7 +136,7 @@ class TestUIDialogs(unittest.TestCase):
             total_pagar=Decimal("1360000"),
             frecuencia_pago=FrecuenciaPago.QUINCENAL,
             fecha_inicio=date.today(),
-            estado=EstadoCredito.ACTIVO
+            estado=EstadoCredito.ACTIVO,
         )
         credito_pagado = Credito(
             id=2,
@@ -144,7 +148,7 @@ class TestUIDialogs(unittest.TestCase):
             total_pagar=Decimal("620000"),
             frecuencia_pago=FrecuenciaPago.QUINCENAL,
             fecha_inicio=date.today(),
-            estado=EstadoCredito.PAGADO
+            estado=EstadoCredito.PAGADO,
         )
 
         mock_app.credito_service.listar_creditos.return_value = [credito_activo, credito_pagado]
@@ -156,7 +160,7 @@ class TestUIDialogs(unittest.TestCase):
                 "numero_cuota": 1,
                 "monto": Decimal("226666.67"),
                 "fecha_vencimiento": date.today(),
-                "estado": EstadoCuota.PENDIENTE
+                "estado": EstadoCuota.PENDIENTE,
             }
         ]
 
@@ -174,14 +178,14 @@ class TestUIDialogs(unittest.TestCase):
 
         cols = [
             {"key": "col1", "text": "Columna 1", "width": 200, "weight": 2, "anchor": "w"},
-            {"key": "cuota", "text": "Cuota", "width": 80, "weight": 0, "anchor": "center"}
+            {"key": "cuota", "text": "Cuota", "width": 80, "weight": 0, "anchor": "center"},
         ]
         table = DataTable(self.root, columns=cols)
         try:
             rows = [
                 {"col1": "Registro 1", "cuota": "1"},
                 {"col1": "Registro 2", "cuota": "2"},
-                {"col1": "Registro 3", "cuota": "3"}
+                {"col1": "Registro 3", "cuota": "3"},
             ]
             table.set_data(rows)
             self.assertEqual(len(table.rows), 3)
@@ -209,7 +213,7 @@ class TestUIDialogs(unittest.TestCase):
                 "fecha_pago": date(2026, 9, 5),
                 "monto": Decimal("150000"),
                 "cliente_nombre": "Erickson",
-                "cliente_id": 1
+                "cliente_id": 1,
             }
         ]
 
@@ -240,7 +244,7 @@ class TestUIDialogs(unittest.TestCase):
                 "fecha_pago": date(2026, 9, 11),
                 "monto": Decimal("92500"),
                 "cliente_nombre": "Erickson Jhair",
-                "cliente_id": 1
+                "cliente_id": 1,
             },
             {
                 "pago_id": 15,
@@ -250,8 +254,8 @@ class TestUIDialogs(unittest.TestCase):
                 "fecha_pago": date(2026, 9, 11),
                 "monto": Decimal("92500"),
                 "cliente_nombre": "Erickson Jhair",
-                "cliente_id": 1
-            }
+                "cliente_id": 1,
+            },
         ]
 
         view = PagosView(self.root, mock_app)
@@ -331,8 +335,3 @@ class TestUIDialogs(unittest.TestCase):
                 mock_load.assert_not_called()
         finally:
             container.destroy()
-
-
-
-
-

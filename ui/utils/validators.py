@@ -1,6 +1,7 @@
 import re
 from decimal import Decimal, InvalidOperation
 
+
 def parsear_monto(texto: str) -> Decimal:
     """Convierte texto a Decimal, admitiendo formatos flexibles:
     - 11333.33 o 11333,33 (decimales con punto o coma)
@@ -11,30 +12,30 @@ def parsear_monto(texto: str) -> Decimal:
     """
     if texto is None:
         raise InvalidOperation("El texto es None")
-    
+
     texto = str(texto).strip().replace("$", "").replace(" ", "").replace("\u00a0", "")
     if not texto:
         raise InvalidOperation("Texto vacío")
-    
+
     sign = ""
     if texto.startswith("-"):
         sign = "-"
         texto = texto[1:]
     elif texto.startswith("+"):
         texto = texto[1:]
-        
+
     if not texto:
         raise InvalidOperation("No contiene dígitos")
-        
+
     if not re.match(r"^[\d.,]+$", texto):
         raise InvalidOperation(f"Caracteres inválidos en monto: {texto}")
 
     if ".." in texto or ",," in texto or ".," in texto or ",." in texto:
         raise InvalidOperation("Separadores consecutivos no permitidos")
-        
+
     dots = texto.count(".")
     commas = texto.count(",")
-    
+
     # Caso 1: Hay tanto puntos como comas (ej. 1.000,50 o 1,000.50)
     if dots > 0 and commas > 0:
         last_dot = texto.rfind(".")
@@ -59,7 +60,7 @@ def parsear_monto(texto: str) -> Decimal:
                     if len(grp) != 3:
                         raise InvalidOperation("Grupos de miles inválidos")
             texto_limpio = texto.replace(",", "")
-            
+
     # Caso 2: Solo hay puntos (ej. 11333.33, 1.000.000, 10.000, 500.50, 11.333.33)
     elif dots > 0:
         parts = texto.split(".")
@@ -104,7 +105,7 @@ def parsear_monto(texto: str) -> Decimal:
                 texto_limpio = "".join(parts)
         else:
             texto_limpio = texto
-            
+
     # Caso 4: Solo dígitos
     else:
         texto_limpio = texto
@@ -125,11 +126,13 @@ def validar_monto(texto: str) -> tuple[bool, str]:
     except (InvalidOperation, ValueError):
         return False, "Ingresa un monto numérico válido."
 
+
 def validar_texto_no_vacio(texto: str, campo: str) -> tuple[bool, str]:
     """Valida que un texto no esté vacío."""
     if not texto or not texto.strip():
         return False, f"El campo {campo} es obligatorio."
     return True, ""
+
 
 def validar_entero_positivo(texto: str, campo: str) -> tuple[bool, str]:
     """Valida que un texto sea un entero positivo."""

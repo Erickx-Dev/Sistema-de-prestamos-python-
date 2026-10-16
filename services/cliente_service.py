@@ -4,10 +4,7 @@ from typing import Optional
 
 from credito_app.modules.cliente import Cliente
 from credito_app.modules.credito import Credito
-from credito_app.modules.excepciones import (
-    ClienteNoEncontradoError,
-    DatosInvalidosError
-)
+from credito_app.modules.excepciones import ClienteNoEncontradoError, DatosInvalidosError
 from credito_app.database.repositories.cliente_repository import ClienteRepository
 from credito_app.database.repositories.credito_repository import CreditoRepository
 
@@ -39,13 +36,8 @@ class ClienteService:
         if self.cliente_repo.obtener_por_documento(documento):
             raise DatosInvalidosError(f"Ya existe un cliente con el documento: {documento}")
 
-        cliente = Cliente(
-            nombre=nombre,
-            telefono=telefono,
-            documento=documento,
-            fecha_registro=date.today()
-        )
-        
+        cliente = Cliente(nombre=nombre, telefono=telefono, documento=documento, fecha_registro=date.today())
+
         cliente_creado = self.cliente_repo.crear(cliente)
         self.conn.commit()
         return cliente_creado
@@ -65,7 +57,19 @@ class ClienteService:
         """
         return self.cliente_repo.buscar_general(nombre)
 
-    def actualizar_cliente(self, cliente_id: int, nombre: Optional[str] = None, telefono: Optional[str] = None, documento: Optional[str] = None) -> Cliente:
+    def obtener_por_documento(self, documento: str) -> Optional[Cliente]:
+        """
+        Obtiene un cliente por su documento de identidad.
+        """
+        return self.cliente_repo.obtener_por_documento(documento.strip())
+
+    def actualizar_cliente(
+        self,
+        cliente_id: int,
+        nombre: Optional[str] = None,
+        telefono: Optional[str] = None,
+        documento: Optional[str] = None,
+    ) -> Cliente:
         """
         Actualiza los datos de un cliente existente.
         """
@@ -87,7 +91,7 @@ class ClienteService:
             documento = documento.strip()
             if not documento:
                 raise DatosInvalidosError("El documento no puede estar vacío.")
-            
+
             if documento != cliente.documento:
                 if self.cliente_repo.obtener_por_documento(documento):
                     raise DatosInvalidosError(f"Ya existe un cliente con el documento: {documento}")

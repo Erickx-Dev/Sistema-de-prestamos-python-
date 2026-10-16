@@ -1,5 +1,6 @@
 import sqlite3
-from credito_app.database.connection import get_connection, get_db_path
+from credito_app.database.connection import get_connection
+
 
 def crear_tablas(conn: sqlite3.Connection) -> None:
     """Crea las tablas de la base de datos si no existen."""
@@ -12,7 +13,7 @@ def crear_tablas(conn: sqlite3.Connection) -> None:
             fecha_registro TEXT NOT NULL
         )
     """)
-    
+
     conn.execute("""
         CREATE TABLE IF NOT EXISTS creditos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -28,7 +29,7 @@ def crear_tablas(conn: sqlite3.Connection) -> None:
             FOREIGN KEY (cliente_id) REFERENCES clientes(id)
         )
     """)
-    
+
     conn.execute("""
         CREATE TABLE IF NOT EXISTS cuotas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -45,7 +46,7 @@ def crear_tablas(conn: sqlite3.Connection) -> None:
     columnas = [row[1] for row in conn.execute("PRAGMA table_info(cuotas)").fetchall()]
     if "en_mora" not in columnas:
         conn.execute("ALTER TABLE cuotas ADD COLUMN en_mora INTEGER NOT NULL DEFAULT 0")
-    
+
     conn.execute("""
         CREATE TABLE IF NOT EXISTS pagos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -57,6 +58,7 @@ def crear_tablas(conn: sqlite3.Connection) -> None:
             FOREIGN KEY (cuota_id) REFERENCES cuotas(id)
         )
     """)
+
 
 def inicializar_base_datos(db_path: str | None = None) -> None:
     """Inicializa la base de datos creando las tablas necesarias."""

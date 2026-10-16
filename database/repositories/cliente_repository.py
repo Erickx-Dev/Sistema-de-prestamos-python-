@@ -4,6 +4,7 @@ from typing import Optional
 
 from credito_app.modules.cliente import Cliente
 
+
 class ClienteRepository:
     """
     Repositorio para gestionar las operaciones de base de datos de los clientes.
@@ -20,7 +21,7 @@ class ClienteRepository:
             nombre=row["nombre"],
             telefono=row["telefono"],
             documento=row["documento"],
-            fecha_registro=date.fromisoformat(row["fecha_registro"])
+            fecha_registro=date.fromisoformat(row["fecha_registro"]),
         )
 
     def crear(self, cliente: Cliente) -> Cliente:
@@ -30,15 +31,7 @@ class ClienteRepository:
             INSERT INTO clientes (nombre, telefono, documento, fecha_registro)
             VALUES (?, ?, ?, ?)
         """
-        cursor.execute(
-            query,
-            (
-                cliente.nombre,
-                cliente.telefono,
-                cliente.documento,
-                cliente.fecha_registro.isoformat()
-            )
-        )
+        cursor.execute(query, (cliente.nombre, cliente.telefono, cliente.documento, cliente.fecha_registro.isoformat()))
         self.conn.commit()
         cliente.id = cursor.lastrowid
         return cliente
@@ -81,10 +74,7 @@ class ClienteRepository:
             SET nombre = ?, telefono = ?, documento = ?
             WHERE id = ?
         """
-        cursor.execute(
-            query,
-            (cliente.nombre, cliente.telefono, cliente.documento, cliente.id)
-        )
+        cursor.execute(query, (cliente.nombre, cliente.telefono, cliente.documento, cliente.id))
         self.conn.commit()
 
     def listar_todos(self) -> list[Cliente]:

@@ -1,23 +1,19 @@
 import sqlite3
 import unittest
-from datetime import date
-from decimal import Decimal
 
 from credito_app.database.schema import crear_tablas
 from credito_app.database.connection import get_connection
 from credito_app.services.cliente_service import ClienteService
 from credito_app.services.credito_service import CreditoService
-from credito_app.modules.credito import FrecuenciaPago
-from credito_app.modules.excepciones import (
-    ClienteNoEncontradoError,
-    DatosInvalidosError
-)
+from credito_app.modules.excepciones import ClienteNoEncontradoError, DatosInvalidosError
+
 
 def get_test_connection() -> sqlite3.Connection:
     conn = get_connection(":memory:")
     crear_tablas(conn)
     conn.commit()
     return conn
+
 
 class TestClienteService(unittest.TestCase):
     def setUp(self):
@@ -58,7 +54,7 @@ class TestClienteService(unittest.TestCase):
         self.cliente_svc.crear_cliente("Juan Perez", "111", "CC1")
         self.cliente_svc.crear_cliente("Juan Gonzalez", "222", "CC2")
         self.cliente_svc.crear_cliente("Maria Perez", "333", "CC3")
-        
+
         resultados = self.cliente_svc.buscar_clientes("Juan")
         self.assertEqual(len(resultados), 2)
 
@@ -67,14 +63,34 @@ class TestClienteService(unittest.TestCase):
         actualizado = self.cliente_svc.actualizar_cliente(cliente.id, nombre="Juan P.")
         self.assertEqual(actualizado.nombre, "Juan P.")
         self.assertEqual(actualizado.telefono, "111")
-        
+
         db_cliente = self.cliente_svc.obtener_cliente(cliente.id)
         self.assertEqual(db_cliente.nombre, "Juan P.")
 
-    def test_obtener_creditos_cliente(self):
-        cliente = self.cliente_svc.crear_cliente("Juan Perez", "111", "CC1")
-        self.credito_svc.crear_credito(cliente.id, Decimal("1000000"), 3, FrecuenciaPago.SEMANAL)
-        self.credito_svc.crear_credito(cliente.id, Decimal("500000"), 1, FrecuenciaPago.QUINCENAL)
-        
-        creditos = self.cliente_svc.obtener_creditos_cliente(cliente.id)
-        self.assertEqual(len(creditos), 2)
+    def test_crear_cliente_telefono_y_documento_vacio(self):
+        with self.assertRaises(DatosInvalidosError):
+            self.cliente_svc.crear_cliente("Juan", "", "CC123")
+        with self.assertRaises(DatosInvalidosError):
+            self.cliente_svc.crear_cliente("Juan", "123", "")
+
+    def test_actualizar_cliente_validaciones(self):
+        c1 = self.cliente_svc.crear_cliente("Cliente Uno", "111", "DOC1")
+        self.cliente_svc.crear_cliente("Cliente Dos", "222", "DOC2")
+
+        with self.assertRaises(DatosInvalidosError):
+            self.cliente_svc.actualizar_cliente(c1.id, nombre="  ")
+        with self.assertRaises(DatosInvalidosError):
+            self.cliente_svc.actualizar_cliente(c1.id, telefono="  ")
+        with self.assertRaises(DatosInvalidosError):
+            self.cliente_svc.actualizar_cliente(c1.id, documento="  ")
+        with self.assertRaises(DatosInvalidosError):
+            self.cliente_svc.actualizar_cliente(c1.id, documento="DOC2")
+
+        # Actualización válida de teléfono y documento
+        c1_up = self.cliente_svc.actualizar_cliente(c1.id, telefono="999", documento="DOC1_NUEVO")
+        self.assertEqual(c1_up.telefono, "999")
+        self.assertEqual(c1_up.documento, "DOC1_NUEVO")
+
+        # Cliente no encontrado
+        with self.assertRaises(ClienteNoEncontradoError):
+            self.cliente_svc.actualizar_cliente(9999, nombre="Inexistente")

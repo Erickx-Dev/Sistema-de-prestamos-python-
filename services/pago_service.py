@@ -9,7 +9,7 @@ from credito_app.modules.excepciones import (
     CreditoNoEncontradoError,
     CuotaNoEncontradaError,
     MontoInvalidoError,
-    PagoInvalidoError
+    PagoInvalidoError,
 )
 from credito_app.database.repositories.pago_repository import PagoRepository
 from credito_app.database.repositories.credito_repository import CreditoRepository
@@ -51,12 +51,7 @@ class PagoService:
 
         fecha_pago = fecha_pago if fecha_pago is not None else date.today()
 
-        pago = Pago(
-            credito_id=credito_id,
-            cuota_id=cuota_id,
-            monto=monto,
-            fecha_pago=fecha_pago
-        )
+        pago = Pago(credito_id=credito_id, cuota_id=cuota_id, monto=monto, fecha_pago=fecha_pago)
 
         pago_creado = self.pago_repo.crear(pago)
 
@@ -108,8 +103,11 @@ class PagoService:
         total_pagar_credito = detalle["credito_total_pagar"]
         saldo_credito_restante = max(Decimal("0.00"), total_pagar_credito - total_pagado_credito)
         porcentaje_pagado = (
-            (total_pagado_credito / total_pagar_credito * Decimal("100")).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)
-            if total_pagar_credito > 0 else Decimal("0.0")
+            (total_pagado_credito / total_pagar_credito * Decimal("100")).quantize(
+                Decimal("0.1"), rounding=ROUND_HALF_UP
+            )
+            if total_pagar_credito > 0
+            else Decimal("0.0")
         )
 
         return {
@@ -122,4 +120,3 @@ class PagoService:
             "saldo_credito_restante": saldo_credito_restante,
             "porcentaje_pagado_credito": porcentaje_pagado,
         }
-

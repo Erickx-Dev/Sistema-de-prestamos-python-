@@ -3,6 +3,7 @@ from decimal import Decimal
 import customtkinter as ctk
 
 import matplotlib
+
 matplotlib.use("TkAgg")
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -14,7 +15,7 @@ from credito_app.ui.utils.formatters import formato_moneda, formato_fecha
 from credito_app.ui.components.header import SectionHeader
 from credito_app.ui.components.cards import MetricCard
 from credito_app.ui.components.notifications import NotificationBar
-from credito_app.modules.excepciones import CrediNodaError, DatosInvalidosError
+from credito_app.modules.excepciones import CrediNodaError
 
 
 class ReportesView(ctk.CTkScrollableFrame):
@@ -154,24 +155,16 @@ class ReportesView(ctk.CTkScrollableFrame):
         row3 = ctk.CTkFrame(self, fg_color="transparent")
         row3.pack(fill="x", padx=10, pady=(0, 20))
 
-        self.card_morosidad = MetricCard(
-            row3, "Tasa de Morosidad", "0.0%", icon="⚠️", color=COLORS["success"]
-        )
+        self.card_morosidad = MetricCard(row3, "Tasa de Morosidad", "0.0%", icon="⚠️", color=COLORS["success"])
         self.card_morosidad.pack(side="left", expand=True, fill="both", padx=(0, 10))
 
-        self.card_ganancia = MetricCard(
-            row3, "Ganancia Líquida", "$0", icon="💎", color=COLORS["success"]
-        )
+        self.card_ganancia = MetricCard(row3, "Ganancia Líquida", "$0", icon="💎", color=COLORS["success"])
         self.card_ganancia.pack(side="left", expand=True, fill="both", padx=(0, 10))
 
-        self.card_ticket = MetricCard(
-            row3, "Ticket Promedio", "$0", icon="🎯", color=COLORS["primary"]
-        )
+        self.card_ticket = MetricCard(row3, "Ticket Promedio", "$0", icon="🎯", color=COLORS["primary"])
         self.card_ticket.pack(side="left", expand=True, fill="both", padx=(0, 10))
 
-        self.card_plazo = MetricCard(
-            row3, "Plazo Promedio", "0 meses", icon="⏱️", color=COLORS["secondary"]
-        )
+        self.card_plazo = MetricCard(row3, "Plazo Promedio", "0 meses", icon="⏱️", color=COLORS["secondary"])
         self.card_plazo.pack(side="left", expand=True, fill="both")
 
         # -------------------------------------------------------------
@@ -288,24 +281,18 @@ class ReportesView(ctk.CTkScrollableFrame):
             try:
                 fecha_desde = date.fromisoformat(txt_desde)
             except ValueError:
-                self._notify(
-                    "Fecha inicial inválida. Use el formato AAAA-MM-DD (ej: 2026-09-01).", "error"
-                )
+                self._notify("Fecha inicial inválida. Use el formato AAAA-MM-DD (ej: 2026-09-01).", "error")
                 return
 
         if txt_hasta:
             try:
                 fecha_hasta = date.fromisoformat(txt_hasta)
             except ValueError:
-                self._notify(
-                    "Fecha final inválida. Use el formato AAAA-MM-DD (ej: 2026-09-01).", "error"
-                )
+                self._notify("Fecha final inválida. Use el formato AAAA-MM-DD (ej: 2026-09-01).", "error")
                 return
 
         if fecha_desde and fecha_hasta and fecha_desde > fecha_hasta:
-            self._notify(
-                "La fecha inicial no puede ser posterior a la fecha final.", "error"
-            )
+            self._notify("La fecha inicial no puede ser posterior a la fecha final.", "error")
             return
 
         self.preset_var.set("Personalizado")
@@ -380,9 +367,15 @@ class ReportesView(ctk.CTkScrollableFrame):
 
         if not semanas:
             self.ax_bar.text(
-                0.5, 0.5, "Sin datos para graficar en este período",
-                ha='center', va='center', transform=self.ax_bar.transAxes,
-                color=COLORS["text_secondary"], fontfamily="Segoe UI", fontsize=11
+                0.5,
+                0.5,
+                "Sin datos para graficar en este período",
+                ha="center",
+                va="center",
+                transform=self.ax_bar.transAxes,
+                color=COLORS["text_secondary"],
+                fontfamily="Segoe UI",
+                fontsize=11,
             )
             self.ax_bar.set_xticks([])
             self.ax_bar.set_yticks([])
@@ -394,9 +387,15 @@ class ReportesView(ctk.CTkScrollableFrame):
             todos_cero = all(p == 0 for p in proyectados) and all(r == 0 for r in recaudados)
             if todos_cero:
                 self.ax_bar.text(
-                    0.5, 0.5, "Sin cuotas ni recaudos registrados en este período",
-                    ha='center', va='center', transform=self.ax_bar.transAxes,
-                    color=COLORS["text_secondary"], fontfamily="Segoe UI", fontsize=11
+                    0.5,
+                    0.5,
+                    "Sin cuotas ni recaudos registrados en este período",
+                    ha="center",
+                    va="center",
+                    transform=self.ax_bar.transAxes,
+                    color=COLORS["text_secondary"],
+                    fontfamily="Segoe UI",
+                    fontsize=11,
                 )
                 self.ax_bar.set_xticks([])
                 self.ax_bar.set_yticks([])
@@ -434,17 +433,15 @@ class ReportesView(ctk.CTkScrollableFrame):
                     return f"${int(val)}"
 
                 self.ax_bar.yaxis.set_major_formatter(ticker.FuncFormatter(currency_formatter))
-                self.ax_bar.tick_params(axis='y', labelsize=8, colors=COLORS["text_secondary"])
-                self.ax_bar.tick_params(axis='x', length=0)
-                self.ax_bar.grid(axis='y', linestyle='--', alpha=0.35, color="#CBD5E1")
-                self.ax_bar.legend(
-                    loc="upper left", frameon=False, prop={'family': 'Segoe UI', 'size': 9}
-                )
+                self.ax_bar.tick_params(axis="y", labelsize=8, colors=COLORS["text_secondary"])
+                self.ax_bar.tick_params(axis="x", length=0)
+                self.ax_bar.grid(axis="y", linestyle="--", alpha=0.35, color="#CBD5E1")
+                self.ax_bar.legend(loc="upper left", frameon=False, prop={"family": "Segoe UI", "size": 9})
 
-        for spine in ['top', 'right']:
+        for spine in ["top", "right"]:
             self.ax_bar.spines[spine].set_visible(False)
-        self.ax_bar.spines['left'].set_color("#E2E8F0")
-        self.ax_bar.spines['bottom'].set_color("#E2E8F0")
+        self.ax_bar.spines["left"].set_color("#E2E8F0")
+        self.ax_bar.spines["bottom"].set_color("#E2E8F0")
 
         self.fig_bar.tight_layout()
         self.canvas_bar.draw()
@@ -462,9 +459,15 @@ class ReportesView(ctk.CTkScrollableFrame):
 
         if total_creditos == 0:
             self.ax_donut.text(
-                0.5, 0.5, "Sin créditos en este período",
-                ha='center', va='center', transform=self.ax_donut.transAxes,
-                color=COLORS["text_secondary"], fontfamily="Segoe UI", fontsize=11
+                0.5,
+                0.5,
+                "Sin créditos en este período",
+                ha="center",
+                va="center",
+                transform=self.ax_donut.transAxes,
+                color=COLORS["text_secondary"],
+                fontfamily="Segoe UI",
+                fontsize=11,
             )
             self.ax_donut.set_xticks([])
             self.ax_donut.set_yticks([])
@@ -481,7 +484,7 @@ class ReportesView(ctk.CTkScrollableFrame):
             wedges, texts, autotexts = self.ax_donut.pie(
                 vals,
                 colors=cols,
-                autopct='%1.0f%%',
+                autopct="%1.0f%%",
                 pctdistance=0.72,
                 startangle=90,
                 wedgeprops=dict(width=0.45, edgecolor=COLORS["bg_panel"], linewidth=2),
@@ -493,9 +496,14 @@ class ReportesView(ctk.CTkScrollableFrame):
                 t.set_family("Segoe UI")
 
             self.ax_donut.text(
-                0, 0, f"{total_creditos}\nCréditos",
-                ha='center', va='center',
-                fontfamily='Segoe UI', fontsize=11, fontweight='bold',
+                0,
+                0,
+                f"{total_creditos}\nCréditos",
+                ha="center",
+                va="center",
+                fontfamily="Segoe UI",
+                fontsize=11,
+                fontweight="bold",
                 color=COLORS["text_primary"],
             )
 
@@ -510,7 +518,7 @@ class ReportesView(ctk.CTkScrollableFrame):
                 bbox_to_anchor=(0.5, -0.05),
                 ncol=3,
                 frameon=False,
-                prop={'family': 'Segoe UI', 'size': 8.5},
+                prop={"family": "Segoe UI", "size": 8.5},
             )
 
         self.fig_donut.tight_layout()
@@ -522,9 +530,10 @@ class ReportesView(ctk.CTkScrollableFrame):
     def destroy(self):
         try:
             import matplotlib.pyplot as plt
-            if hasattr(self, 'fig_bar'):
+
+            if hasattr(self, "fig_bar"):
                 plt.close(self.fig_bar)
-            if hasattr(self, 'fig_donut'):
+            if hasattr(self, "fig_donut"):
                 plt.close(self.fig_donut)
         except Exception:
             pass

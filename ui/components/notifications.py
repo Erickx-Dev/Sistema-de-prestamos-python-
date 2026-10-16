@@ -1,6 +1,7 @@
 import customtkinter as ctk
 from credito_app.ui.theme import COLORS, FONTS
 
+
 class NotificationBar(ctk.CTkFrame):
     def __init__(self, parent):
         super().__init__(parent, height=40, corner_radius=0)
@@ -8,7 +9,7 @@ class NotificationBar(ctk.CTkFrame):
         self.label.pack(pady=8)
         self._timer_id = None
         self._manager = None
-        
+
     def _determine_manager(self) -> str:
         if self._manager:
             return self._manager
@@ -20,14 +21,14 @@ class NotificationBar(ctk.CTkFrame):
         else:
             self._manager = "grid"
         return self._manager
-        
+
     def _show(self, message: str, color: str, icon: str):
         if self._timer_id:
             self.after_cancel(self._timer_id)
-            
+
         self.configure(fg_color=color)
         self.label.configure(text=f"{icon} {message}")
-        
+
         mgr = self._determine_manager()
         if mgr == "pack":
             first_slave = None
@@ -38,18 +39,18 @@ class NotificationBar(ctk.CTkFrame):
             self.pack(fill="x", side="top", before=first_slave)
         else:
             self.grid(row=0, column=0, sticky="ew")
-        
+
         self._timer_id = self.after(4000, self.hide)
-        
+
     def show_success(self, message: str):
         self._show(message, COLORS["success"], "✓")
-        
+
     def show_error(self, message: str):
         self._show(message, COLORS["error"], "✕")
-        
+
     def show_warning(self, message: str):
         self._show(message, COLORS["warning"], "⚠")
-        
+
     def hide(self):
         mgr = self._determine_manager()
         if mgr == "pack":

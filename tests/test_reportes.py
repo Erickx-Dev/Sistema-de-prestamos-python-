@@ -1,6 +1,6 @@
 import sqlite3
 import unittest
-from datetime import date, timedelta
+from datetime import date
 from decimal import Decimal
 
 from credito_app.database.schema import crear_tablas
@@ -9,7 +9,7 @@ from credito_app.services.cliente_service import ClienteService
 from credito_app.services.credito_service import CreditoService
 from credito_app.services.pago_service import PagoService
 from credito_app.services.reporte_service import ReporteService
-from credito_app.modules.credito import FrecuenciaPago, EstadoCredito
+from credito_app.modules.credito import FrecuenciaPago
 from credito_app.modules.excepciones import DatosInvalidosError
 
 
@@ -88,7 +88,7 @@ class TestReporteService(unittest.TestCase):
         )
 
         # Crédito 2: Creado en 2026-02-15
-        c2 = self.credito_svc.crear_credito(
+        _c2 = self.credito_svc.crear_credito(
             cliente_id=self.cliente.id,
             capital=Decimal("200000"),
             plazo_meses=1,
@@ -133,7 +133,7 @@ class TestReporteService(unittest.TestCase):
             fecha_inicio=date(2026, 1, 10),
         )
         # Crédito en Febrero
-        c2 = self.credito_svc.crear_credito(
+        _c2 = self.credito_svc.crear_credito(
             cliente_id=self.cliente.id,
             capital=Decimal("200000"),
             plazo_meses=1,
@@ -203,7 +203,7 @@ class TestReporteService(unittest.TestCase):
         self.credito_svc.determinar_estado_credito(c1.id)
 
         # Crédito 2: En mora (cuota vencida en el pasado no pagada)
-        c2 = self.credito_svc.crear_credito(
+        _c2 = self.credito_svc.crear_credito(
             cliente_id=self.cliente.id,
             capital=Decimal("200000"),
             plazo_meses=1,
@@ -213,7 +213,7 @@ class TestReporteService(unittest.TestCase):
         )
 
         # Crédito 3: Al día (crédito reciente con cuotas a futuro)
-        c3 = self.credito_svc.crear_credito(
+        _c3 = self.credito_svc.crear_credito(
             cliente_id=self.cliente.id,
             capital=Decimal("300000"),
             plazo_meses=1,
@@ -261,9 +261,7 @@ class TestReporteService(unittest.TestCase):
 
     def test_fechas_invalidas_distribucion_y_proyeccion(self):
         with self.assertRaises(DatosInvalidosError):
-            self.reporte_svc.obtener_distribucion_cartera(
-                fecha_desde=date(2026, 8, 10), fecha_hasta=date(2026, 8, 1)
-            )
+            self.reporte_svc.obtener_distribucion_cartera(fecha_desde=date(2026, 8, 10), fecha_hasta=date(2026, 8, 1))
 
         with self.assertRaises(DatosInvalidosError):
             self.reporte_svc.obtener_recaudo_vs_proyeccion_semanal(
@@ -272,7 +270,7 @@ class TestReporteService(unittest.TestCase):
 
     def test_metricas_avanzadas_morosidad(self):
         # Crédito otorgado en el pasado cuyas cuotas ya vencieron
-        c = self.credito_svc.crear_credito(
+        _c = self.credito_svc.crear_credito(
             cliente_id=self.cliente.id,
             capital=Decimal("100000"),
             plazo_meses=1,

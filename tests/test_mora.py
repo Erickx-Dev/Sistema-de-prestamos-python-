@@ -24,7 +24,10 @@ class TestMoraCuotas(unittest.TestCase):
     def _credito_pasado(self):
         # Inicio hace 60 días: las primeras cuotas semanales ya vencieron, las últimas no necesariamente
         credito = self.credito_svc.crear_credito(
-            self.cliente.id, Decimal("1000000"), 3, FrecuenciaPago.SEMANAL,
+            self.cliente.id,
+            Decimal("1000000"),
+            3,
+            FrecuenciaPago.SEMANAL,
             fecha_inicio=date.today() - timedelta(days=60),
         )
         return credito, self.credito_svc.obtener_plan_pagos(credito.id)
@@ -39,9 +42,7 @@ class TestMoraCuotas(unittest.TestCase):
             self.assertEqual(c.etiqueta_estado, "PENDIENTE (EN MORA)")
 
     def test_cuota_futura_no_esta_en_mora(self):
-        credito = self.credito_svc.crear_credito(
-            self.cliente.id, Decimal("1000000"), 3, FrecuenciaPago.SEMANAL
-        )
+        credito = self.credito_svc.crear_credito(self.cliente.id, Decimal("1000000"), 3, FrecuenciaPago.SEMANAL)
         plan = self.credito_svc.obtener_plan_pagos(credito.id)
         self.assertTrue(all(not c.en_mora for c in plan))
 
@@ -82,18 +83,19 @@ class TestMoraCuotas(unittest.TestCase):
         self.assertEqual(self.credito_svc.determinar_estado_credito(credito.id), EstadoCredito.PAGADO)
 
     def test_fecha_referencia_futura_marca_mora(self):
-        credito = self.credito_svc.crear_credito(
-            self.cliente.id, Decimal("1000000"), 3, FrecuenciaPago.SEMANAL
-        )
+        credito = self.credito_svc.crear_credito(self.cliente.id, Decimal("1000000"), 3, FrecuenciaPago.SEMANAL)
         self.credito_svc.actualizar_cuotas_en_mora(date.today() + timedelta(days=365))
         plan = self.credito_svc.obtener_plan_pagos(credito.id)
         self.assertTrue(all(c.en_mora for c in plan))
 
     def test_migracion_agrega_columna_en_mora(self):
         import sqlite3
+
         conn = sqlite3.connect(":memory:")
-        conn.execute("CREATE TABLE cuotas (id INTEGER PRIMARY KEY, credito_id INTEGER, numero_cuota INTEGER, "
-                     "fecha_vencimiento TEXT, monto TEXT, estado TEXT DEFAULT 'PENDIENTE')")
+        conn.execute(
+            "CREATE TABLE cuotas (id INTEGER PRIMARY KEY, credito_id INTEGER, numero_cuota INTEGER, "
+            "fecha_vencimiento TEXT, monto TEXT, estado TEXT DEFAULT 'PENDIENTE')"
+        )
         crear_tablas(conn)
         columnas = [r[1] for r in conn.execute("PRAGMA table_info(cuotas)").fetchall()]
         self.assertIn("en_mora", columnas)

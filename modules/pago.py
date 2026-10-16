@@ -3,9 +3,11 @@ from datetime import date
 from decimal import Decimal
 from typing import Optional
 
+
 @dataclass
 class Pago:
     """Representa un pago realizado a una cuota de un crédito."""
+
     credito_id: int
     cuota_id: int
     monto: Decimal

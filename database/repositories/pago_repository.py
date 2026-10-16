@@ -5,6 +5,7 @@ from typing import Optional
 
 from credito_app.modules.pago import Pago
 
+
 class PagoRepository:
     """
     Repositorio para gestionar las operaciones de base de datos de los pagos.
@@ -21,7 +22,7 @@ class PagoRepository:
             credito_id=row["credito_id"],
             cuota_id=row["cuota_id"],
             monto=Decimal(row["monto"]),
-            fecha_pago=date.fromisoformat(row["fecha_pago"])
+            fecha_pago=date.fromisoformat(row["fecha_pago"]),
         )
 
     def crear(self, pago: Pago) -> Pago:
@@ -31,15 +32,7 @@ class PagoRepository:
             INSERT INTO pagos (credito_id, cuota_id, monto, fecha_pago)
             VALUES (?, ?, ?, ?)
         """
-        cursor.execute(
-            query,
-            (
-                pago.credito_id,
-                pago.cuota_id,
-                str(pago.monto),
-                pago.fecha_pago.isoformat()
-            )
-        )
+        cursor.execute(query, (pago.credito_id, pago.cuota_id, str(pago.monto), pago.fecha_pago.isoformat()))
         self.conn.commit()
         pago.id = cursor.lastrowid
         return pago
@@ -97,16 +90,18 @@ class PagoRepository:
         cursor.execute(query)
         results = []
         for row in cursor.fetchall():
-            results.append({
-                "pago_id": row["pago_id"],
-                "credito_id": row["credito_id"],
-                "cuota_id": row["cuota_id"],
-                "numero_cuota": row["numero_cuota"],
-                "fecha_pago": date.fromisoformat(row["fecha_pago"]),
-                "monto": Decimal(row["monto"]),
-                "cliente_nombre": row["cliente_nombre"],
-                "cliente_id": row["cliente_id"],
-            })
+            results.append(
+                {
+                    "pago_id": row["pago_id"],
+                    "credito_id": row["credito_id"],
+                    "cuota_id": row["cuota_id"],
+                    "numero_cuota": row["numero_cuota"],
+                    "fecha_pago": date.fromisoformat(row["fecha_pago"]),
+                    "monto": Decimal(row["monto"]),
+                    "cliente_nombre": row["cliente_nombre"],
+                    "cliente_id": row["cliente_id"],
+                }
+            )
         return results
 
     def obtener_por_id(self, pago_id: int) -> Optional[Pago]:
@@ -162,4 +157,3 @@ class PagoRepository:
             "cliente_documento": row["cliente_documento"],
             "cliente_telefono": row["cliente_telefono"],
         }
-

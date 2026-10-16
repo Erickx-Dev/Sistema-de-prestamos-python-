@@ -8,7 +8,7 @@ from credito_app.modules.excepciones import (
     ClienteNoEncontradoError,
     CreditoNoEncontradoError,
     MontoInvalidoError,
-    DatosInvalidosError
+    DatosInvalidosError,
 )
 from credito_app.database.repositories.credito_repository import CreditoRepository
 from credito_app.database.repositories.pago_repository import PagoRepository
@@ -36,7 +36,7 @@ class CreditoService:
             raise DatosInvalidosError("El plazo en meses debe ser mayor a 0.")
 
         intereses = capital * tasa_mensual * plazo_meses
-        return intereses.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        return intereses.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
     def calcular_total(self, capital: Decimal, intereses: Decimal) -> Decimal:
         """Calcula el total a pagar sumando capital e intereses."""
@@ -57,7 +57,7 @@ class CreditoService:
         plazo_meses: int,
         frecuencia: FrecuenciaPago,
         tasa_mensual: Optional[Decimal] = None,
-        fecha_inicio: Optional[date] = None
+        fecha_inicio: Optional[date] = None,
     ) -> Credito:
         """Crea un nuevo crédito para un cliente y genera su plan de pagos."""
         if capital <= 0:
@@ -83,7 +83,7 @@ class CreditoService:
             total_pagar=total_pagar,
             frecuencia_pago=frecuencia,
             fecha_inicio=fecha_inicio,
-            estado=EstadoCredito.ACTIVO
+            estado=EstadoCredito.ACTIVO,
         )
 
         credito_creado = self.credito_repo.crear(credito)
@@ -101,7 +101,9 @@ class CreditoService:
         if numero_cuotas <= 0:
             return []
 
-        monto_cuota_base = (credito.total_pagar / Decimal(numero_cuotas)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        monto_cuota_base = (credito.total_pagar / Decimal(numero_cuotas)).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
         ajuste = credito.total_pagar - (monto_cuota_base * numero_cuotas)
 
         cuotas = []
@@ -123,7 +125,7 @@ class CreditoService:
                 fecha_vencimiento=fecha_vencimiento,
                 monto=monto,
                 estado=EstadoCuota.PENDIENTE,
-                en_mora=fecha_vencimiento < date.today()
+                en_mora=fecha_vencimiento < date.today(),
             )
             cuotas.append(cuota)
 
@@ -150,7 +152,7 @@ class CreditoService:
     def determinar_estado_credito(self, credito_id: int) -> EstadoCredito:
         """Determina y actualiza el estado de un crédito según sus cuotas."""
         credito = self.obtener_credito(credito_id)
-        
+
         if credito.estado == EstadoCredito.CANCELADO:
             return EstadoCredito.CANCELADO
 

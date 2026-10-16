@@ -5,6 +5,7 @@ from typing import Optional
 
 from credito_app.modules.credito import Credito, Cuota, FrecuenciaPago, EstadoCredito, EstadoCuota
 
+
 class CreditoRepository:
     """
     Repositorio para gestionar las operaciones de base de datos de los créditos y cuotas.
@@ -26,7 +27,7 @@ class CreditoRepository:
             total_pagar=Decimal(row["total_pagar"]),
             frecuencia_pago=FrecuenciaPago(row["frecuencia_pago"]),
             fecha_inicio=date.fromisoformat(row["fecha_inicio"]),
-            estado=EstadoCredito(row["estado"])
+            estado=EstadoCredito(row["estado"]),
         )
 
     def _row_to_cuota(self, row: sqlite3.Row) -> Cuota:
@@ -38,7 +39,7 @@ class CreditoRepository:
             fecha_vencimiento=date.fromisoformat(row["fecha_vencimiento"]),
             monto=Decimal(row["monto"]),
             estado=EstadoCuota(row["estado"]),
-            en_mora=bool(row["en_mora"])
+            en_mora=bool(row["en_mora"]),
         )
 
     def crear(self, credito: Credito) -> Credito:
@@ -63,8 +64,8 @@ class CreditoRepository:
                 str(credito.total_pagar),
                 credito.frecuencia_pago.value,
                 credito.fecha_inicio.isoformat(),
-                credito.estado.value
-            )
+                credito.estado.value,
+            ),
         )
         self.conn.commit()
         credito.id = cursor.lastrowid
@@ -110,8 +111,8 @@ class CreditoRepository:
                 cuota.fecha_vencimiento.isoformat(),
                 str(cuota.monto),
                 cuota.estado.value,
-                1 if cuota.en_mora else 0
-            )
+                1 if cuota.en_mora else 0,
+            ),
         )
         self.conn.commit()
         cuota.id = cursor.lastrowid
@@ -168,7 +169,7 @@ class CreditoRepository:
                 ELSE 0
             END
             """,
-            (fecha_str, fecha_str)
+            (fecha_str, fecha_str),
         )
         afectadas = cursor.rowcount
         self.conn.commit()
@@ -204,15 +205,17 @@ class CreditoRepository:
         cursor.execute(query, (limite,))
         results = []
         for row in cursor.fetchall():
-            results.append({
-                "cuota_id": row["cuota_id"],
-                "credito_id": row["credito_id"],
-                "numero_cuota": row["numero_cuota"],
-                "fecha_vencimiento": date.fromisoformat(row["fecha_vencimiento"]),
-                "monto": Decimal(row["monto"]),
-                "estado": EstadoCuota(row["estado"]),
-                "en_mora": bool(row["en_mora"]),
-                "cliente_nombre": row["cliente_nombre"],
-                "cliente_id": row["cliente_id"],
-            })
+            results.append(
+                {
+                    "cuota_id": row["cuota_id"],
+                    "credito_id": row["credito_id"],
+                    "numero_cuota": row["numero_cuota"],
+                    "fecha_vencimiento": date.fromisoformat(row["fecha_vencimiento"]),
+                    "monto": Decimal(row["monto"]),
+                    "estado": EstadoCuota(row["estado"]),
+                    "en_mora": bool(row["en_mora"]),
+                    "cliente_nombre": row["cliente_nombre"],
+                    "cliente_id": row["cliente_id"],
+                }
+            )
         return results

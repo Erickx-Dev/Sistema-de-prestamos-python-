@@ -14,7 +14,7 @@ class PagosView(ctk.CTkFrame):
         self.app = app
         self.pagos_detalle = []
         self.mapa_pagos = {}
-        
+
         self.last_data_version = getattr(self.app, "data_version", 1)
         self.notification = NotificationBar(self)
         self._build_ui()
@@ -30,11 +30,9 @@ class PagosView(ctk.CTkFrame):
             self.last_data_version = app_version
 
     def _build_ui(self):
-        SectionHeader(
-            self,
-            title="Pagos",
-            subtitle="Historial de recaudos y emisión de comprobantes"
-        ).pack(fill="x", padx=20, pady=(0, 12))
+        SectionHeader(self, title="Pagos", subtitle="Historial de recaudos y emisión de comprobantes").pack(
+            fill="x", padx=20, pady=(0, 12)
+        )
 
         filter_frame = ctk.CTkFrame(self, fg_color="transparent")
         filter_frame.pack(fill="x", padx=20, pady=(0, 12))
@@ -44,7 +42,7 @@ class PagosView(ctk.CTkFrame):
             placeholder_text="Buscar por cliente o # crédito...",
             width=280,
             height=36,
-            font=FONTS["input"]
+            font=FONTS["input"],
         )
         self.search_entry.pack(side="left", padx=(0, 8))
         self.search_entry.bind("<Return>", self._on_search)
@@ -57,7 +55,7 @@ class PagosView(ctk.CTkFrame):
             hover_color=COLORS["primary_hover"],
             width=90,
             height=36,
-            command=self._on_search
+            command=self._on_search,
         )
         self.btn_buscar.pack(side="left", padx=(0, 8))
 
@@ -72,7 +70,7 @@ class PagosView(ctk.CTkFrame):
             hover_color=COLORS["row_hover"],
             width=80,
             height=36,
-            command=self._on_limpiar
+            command=self._on_limpiar,
         )
         self.btn_limpiar.pack(side="left", padx=(0, 15))
 
@@ -80,17 +78,17 @@ class PagosView(ctk.CTkFrame):
             filter_frame,
             text="💡 Presiona Enter o Buscar para filtrar",
             font=FONTS["small"],
-            text_color=COLORS["text_secondary"]
+            text_color=COLORS["text_secondary"],
         ).pack(side="left")
-        
+
         columns = [
             {"key": "fecha", "text": "Fecha", "width": 120, "weight": 0, "anchor": "center"},
             {"key": "cliente", "text": "Cliente", "width": 240, "weight": 3, "anchor": "w"},
             {"key": "credito", "text": "Crédito", "width": 100, "weight": 0, "anchor": "center"},
             {"key": "cuota", "text": "Cuota", "width": 90, "weight": 0, "anchor": "center"},
-            {"key": "monto", "text": "Monto Abonado", "width": 140, "weight": 1, "anchor": "e"}
+            {"key": "monto", "text": "Monto Abonado", "width": 140, "weight": 1, "anchor": "e"},
         ]
-        
+
         self.table = DataTable(self, columns=columns, on_row_click=self._on_row_click, height=500)
         self.table.pack(fill="both", expand=True, padx=20, pady=(0, 20))
 
@@ -107,16 +105,18 @@ class PagosView(ctk.CTkFrame):
         for pago in lista_pagos:
             num_cuota = pago.get("numero_cuota")
             cuota_display = str(num_cuota) if num_cuota is not None else str(pago["cuota_id"])
-            rows.append({
-                "id": pago["pago_id"],
-                "fecha": formato_fecha(pago["fecha_pago"]),
-                "cliente": pago["cliente_nombre"],
-                "credito": f"#{pago['credito_id']}",
-                "cuota": cuota_display,
-                "monto": formato_moneda(pago["monto"]),
-                "__pago_id": pago["pago_id"],
-                "__credito_id": pago["credito_id"]
-            })
+            rows.append(
+                {
+                    "id": pago["pago_id"],
+                    "fecha": formato_fecha(pago["fecha_pago"]),
+                    "cliente": pago["cliente_nombre"],
+                    "credito": f"#{pago['credito_id']}",
+                    "cuota": cuota_display,
+                    "monto": formato_moneda(pago["monto"]),
+                    "__pago_id": pago["pago_id"],
+                    "__credito_id": pago["credito_id"],
+                }
+            )
 
         self.table.set_data(rows)
 
@@ -149,8 +149,6 @@ class PagosView(ctk.CTkFrame):
         self.search_entry.delete(0, "end")
         self._render_rows(self.pagos_detalle)
 
-
-
     def _on_row_click(self, row_data):
         if not row_data:
             return
@@ -158,4 +156,3 @@ class PagosView(ctk.CTkFrame):
         pago_info = self.mapa_pagos.get(pago_id)
         if pago_info:
             DetallePagoDialog(self, pago_info, self.app)
-

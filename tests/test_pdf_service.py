@@ -3,7 +3,6 @@ import tempfile
 import shutil
 from pathlib import Path
 from decimal import Decimal
-from datetime import date
 
 from credito_app.database.schema import crear_tablas
 from credito_app.database.connection import get_connection
@@ -29,15 +28,10 @@ class TestPDFService(unittest.TestCase):
         self.pago_svc = PagoService(self.conn)
 
         self.cliente = self.cliente_svc.crear_cliente(
-            nombre="Carlos Andrés Mendoza",
-            telefono="3119876543",
-            documento="CC-1098765432"
+            nombre="Carlos Andrés Mendoza", telefono="3119876543", documento="CC-1098765432"
         )
         self.credito = self.credito_svc.crear_credito(
-            cliente_id=self.cliente.id,
-            capital=Decimal("500000"),
-            plazo_meses=2,
-            frecuencia=FrecuenciaPago.QUINCENAL
+            cliente_id=self.cliente.id, capital=Decimal("500000"), plazo_meses=2, frecuencia=FrecuenciaPago.QUINCENAL
         )
 
         self.cuotas = self.credito_svc.obtener_plan_pagos(self.credito.id)
@@ -161,6 +155,7 @@ class TestPDFService(unittest.TestCase):
 
     def test_generar_pdf_sin_qrcode(self):
         import credito_app.services.pdf_service as pdf_mod
+
         original_val = pdf_mod.QRCODE_AVAILABLE
         try:
             pdf_mod.QRCODE_AVAILABLE = False
@@ -178,4 +173,3 @@ class TestPDFService(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

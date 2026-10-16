@@ -1,0 +1,33 @@
+[tool.pytest.ini_options]
+testpaths = ["credito_app/tests"]
+python_files = ["test_*.py"]
+addopts = "-v --strict-markers"
+
+[tool.coverage.run]
+source = ["credito_app"]
+omit = [
+    "credito_app/tests/*",
+    "credito_app/comprobantes/*",
+    "credito_app/main.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+    "pass",
+    "except ImportError:",
+]
+show_missing = true
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+ignore = [
+    "E501",  # Long lines allowed up to reasonable formatting
+]

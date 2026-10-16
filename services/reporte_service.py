@@ -71,9 +71,7 @@ class ReporteService:
 
         raise DatosInvalidosError(f"Tipo de filtro temporal no reconocido: {tipo}")
 
-    def obtener_metricas(
-        self, fecha_desde: Optional[date] = None, fecha_hasta: Optional[date] = None
-    ) -> dict:
+    def obtener_metricas(self, fecha_desde: Optional[date] = None, fecha_hasta: Optional[date] = None) -> dict:
         """
         Calcula las métricas consolidadas del sistema dentro del rango de fechas especificado.
         - Créditos: filtrados por fecha_inicio
@@ -140,12 +138,10 @@ class ReporteService:
 
         # 3. Ticket promedio de desembolso y Plazo promedio
         if total > 0:
-            ticket_promedio = (capital_prestado / Decimal(total)).quantize(
-                Decimal("0.01"), rounding=ROUND_HALF_UP
+            ticket_promedio = (capital_prestado / Decimal(total)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            plazo_promedio = (Decimal(sum(c.plazo_meses for c in creditos)) / Decimal(total)).quantize(
+                Decimal("0.1"), rounding=ROUND_HALF_UP
             )
-            plazo_promedio = (
-                Decimal(sum(c.plazo_meses for c in creditos)) / Decimal(total)
-            ).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)
         else:
             ticket_promedio = Decimal("0")
             plazo_promedio = Decimal("0.0")
@@ -207,9 +203,9 @@ class ReporteService:
             else:
                 cuotas = self.credito_repo.obtener_cuotas_por_credito(c.id)
                 cuotas_en_mora = [
-                    q for q in cuotas
-                    if q.estado not in (EstadoCuota.PAGADA, EstadoCuota.PAGADA.value)
-                    and q.fecha_vencimiento < today
+                    q
+                    for q in cuotas
+                    if q.estado not in (EstadoCuota.PAGADA, EstadoCuota.PAGADA.value) and q.fecha_vencimiento < today
                 ]
                 if cuotas_en_mora or c.estado in (EstadoCredito.VENCIDO, EstadoCredito.VENCIDO.value):
                     en_mora_count += 1
@@ -291,12 +287,14 @@ class ReporteService:
                 (p.monto for p in pagos if ini <= p.fecha_pago <= fin),
                 Decimal("0"),
             )
-            resultado.append({
-                "etiqueta": sem["etiqueta"],
-                "inicio": ini,
-                "fin": fin,
-                "proyectado": proyectado,
-                "recaudado": recaudado,
-            })
+            resultado.append(
+                {
+                    "etiqueta": sem["etiqueta"],
+                    "inicio": ini,
+                    "fin": fin,
+                    "proyectado": proyectado,
+                    "recaudado": recaudado,
+                }
+            )
 
         return resultado

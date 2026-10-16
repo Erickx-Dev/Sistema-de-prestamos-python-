@@ -10,17 +10,8 @@ from typing import Optional, Union
 
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
-from reportlab.lib.units import inch
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import (
-    SimpleDocTemplate,
-    Paragraph,
-    Spacer,
-    Table,
-    TableStyle,
-    Image,
-    KeepTogether
-)
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image, KeepTogether
 
 from credito_app.config import BASE_DIR
 from credito_app.ui.utils.formatters import formato_moneda, formato_fecha, formato_porcentaje
@@ -28,6 +19,7 @@ from credito_app.modules.excepciones import CrediNodaError
 
 try:
     import qrcode
+
     QRCODE_AVAILABLE = True
 except ImportError:
     QRCODE_AVAILABLE = False
@@ -35,6 +27,7 @@ except ImportError:
 
 class PDFServiceError(CrediNodaError):
     """Excepción para errores ocurridos durante la generación o manipulación de PDFs."""
+
     pass
 
 
@@ -81,12 +74,7 @@ class PDFService:
                 destino.parent.mkdir(parents=True, exist_ok=True)
 
             doc = SimpleDocTemplate(
-                str(destino),
-                pagesize=letter,
-                leftMargin=36,
-                rightMargin=36,
-                topMargin=36,
-                bottomMargin=36
+                str(destino), pagesize=letter, leftMargin=36, rightMargin=36, topMargin=36, bottomMargin=36
             )
 
             elementos = self._construir_elementos_comprobante(datos)
@@ -108,7 +96,7 @@ class PDFService:
             fontName="Helvetica-Bold",
             fontSize=16,
             leading=20,
-            textColor=colors.HexColor("#0F172A")
+            textColor=colors.HexColor("#0F172A"),
         )
 
         style_header_subtitle = ParagraphStyle(
@@ -117,7 +105,7 @@ class PDFService:
             fontName="Helvetica",
             fontSize=9,
             leading=13,
-            textColor=colors.HexColor("#475569")
+            textColor=colors.HexColor("#475569"),
         )
 
         style_badge_num = ParagraphStyle(
@@ -127,7 +115,7 @@ class PDFService:
             fontSize=12,
             leading=15,
             alignment=2,  # Right
-            textColor=colors.HexColor("#1E3A8A")
+            textColor=colors.HexColor("#1E3A8A"),
         )
 
         style_badge_meta = ParagraphStyle(
@@ -137,7 +125,7 @@ class PDFService:
             fontSize=8,
             leading=11,
             alignment=2,  # Right
-            textColor=colors.HexColor("#64748B")
+            textColor=colors.HexColor("#64748B"),
         )
 
         style_sec_title = ParagraphStyle(
@@ -146,7 +134,7 @@ class PDFService:
             fontName="Helvetica-Bold",
             fontSize=10,
             leading=13,
-            textColor=colors.HexColor("#1E293B")
+            textColor=colors.HexColor("#1E293B"),
         )
 
         style_cell_lbl = ParagraphStyle(
@@ -155,7 +143,7 @@ class PDFService:
             fontName="Helvetica-Bold",
             fontSize=8.5,
             leading=12,
-            textColor=colors.HexColor("#334155")
+            textColor=colors.HexColor("#334155"),
         )
 
         style_cell_val = ParagraphStyle(
@@ -164,7 +152,7 @@ class PDFService:
             fontName="Helvetica",
             fontSize=8.5,
             leading=12,
-            textColor=colors.HexColor("#0F172A")
+            textColor=colors.HexColor("#0F172A"),
         )
 
         style_th = ParagraphStyle(
@@ -173,7 +161,7 @@ class PDFService:
             fontName="Helvetica-Bold",
             fontSize=8.5,
             leading=11,
-            textColor=colors.white
+            textColor=colors.white,
         )
 
         style_td = ParagraphStyle(
@@ -182,7 +170,7 @@ class PDFService:
             fontName="Helvetica",
             fontSize=8.5,
             leading=11,
-            textColor=colors.HexColor("#1E293B")
+            textColor=colors.HexColor("#1E293B"),
         )
 
         style_td_bold = ParagraphStyle(
@@ -191,7 +179,7 @@ class PDFService:
             fontName="Helvetica-Bold",
             fontSize=9,
             leading=12,
-            textColor=colors.HexColor("#0F172A")
+            textColor=colors.HexColor("#0F172A"),
         )
 
         style_legal = ParagraphStyle(
@@ -201,7 +189,7 @@ class PDFService:
             fontSize=7.5,
             leading=10,
             textColor=colors.HexColor("#64748B"),
-            alignment=1  # Center
+            alignment=1,  # Center
         )
 
         elementos = []
@@ -217,24 +205,28 @@ class PDFService:
         header_left = [
             Paragraph("CREDINODA", style_header_title),
             Paragraph("Sistema de Administración y Cobranza de Créditos", style_header_subtitle),
-            Paragraph("Soporte Oficial de Recaudo y Amortización", style_header_subtitle)
+            Paragraph("Soporte Oficial de Recaudo y Amortización", style_header_subtitle),
         ]
 
         header_right = [
             Paragraph("COMPROBANTE DE PAGO", style_badge_num),
             Paragraph(f"N°: <b>{numero_recibo}</b>", style_badge_num),
             Paragraph(f"Fecha del Pago: <b>{fecha_pago_fmt}</b>", style_badge_meta),
-            Paragraph(f"Generado: {emision_ahora}", style_badge_meta)
+            Paragraph(f"Generado: {emision_ahora}", style_badge_meta),
         ]
 
         header_table = Table([[header_left, header_right]], colWidths=[330, 210])
-        header_table.setStyle(TableStyle([
-            ("VALIGN", (0, 0), (-1, -1), "TOP"),
-            ("LEFTPADDING", (0, 0), (-1, -1), 0),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
-            ("LINEBELOW", (0, 0), (-1, -1), 1.5, colors.HexColor("#2563EB")),
-        ]))
+        header_table.setStyle(
+            TableStyle(
+                [
+                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+                    ("LINEBELOW", (0, 0), (-1, -1), 1.5, colors.HexColor("#2563EB")),
+                ]
+            )
+        )
         elementos.append(header_table)
         elementos.append(Spacer(1, 12))
 
@@ -245,18 +237,28 @@ class PDFService:
         cliente_content = [
             [Paragraph("DATOS DEL TITULAR / CLIENTE", style_sec_title), ""],
             [Paragraph("Nombre:", style_cell_lbl), Paragraph(str(datos.get("cliente_nombre", "-")), style_cell_val)],
-            [Paragraph("Documento / C.C.:", style_cell_lbl), Paragraph(str(datos.get("cliente_documento", "-")), style_cell_val)],
-            [Paragraph("Teléfono:", style_cell_lbl), Paragraph(str(datos.get("cliente_telefono", "-")), style_cell_val)],
+            [
+                Paragraph("Documento / C.C.:", style_cell_lbl),
+                Paragraph(str(datos.get("cliente_documento", "-")), style_cell_val),
+            ],
+            [
+                Paragraph("Teléfono:", style_cell_lbl),
+                Paragraph(str(datos.get("cliente_telefono", "-")), style_cell_val),
+            ],
         ]
         tabla_cliente = Table(cliente_content, colWidths=[100, 160])
-        tabla_cliente.setStyle(TableStyle([
-            ("SPAN", (0, 0), (1, 0)),
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("TOPPADDING", (0, 0), (-1, -1), 2),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
-            ("LINEBELOW", (0, 0), (1, 0), 1, colors.HexColor("#CBD5E1")),
-            ("BACKGROUND", (0, 0), (1, 0), colors.HexColor("#F8FAFC")),
-        ]))
+        tabla_cliente.setStyle(
+            TableStyle(
+                [
+                    ("SPAN", (0, 0), (1, 0)),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("TOPPADDING", (0, 0), (-1, -1), 2),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+                    ("LINEBELOW", (0, 0), (1, 0), 1, colors.HexColor("#CBD5E1")),
+                    ("BACKGROUND", (0, 0), (1, 0), colors.HexColor("#F8FAFC")),
+                ]
+            )
+        )
 
         # Bloque Crédito
         credito_id = datos.get("credito_id", "-")
@@ -269,28 +271,39 @@ class PDFService:
             [Paragraph("DATOS DEL CRÉDITO", style_sec_title), ""],
             [Paragraph("Crédito N°:", style_cell_lbl), Paragraph(f"#{credito_id}", style_cell_val)],
             [Paragraph("Capital Inicial:", style_cell_lbl), Paragraph(capital_str, style_cell_val)],
-            [Paragraph("Frecuencia / Plazo:", style_cell_lbl), Paragraph(f"{frecuencia_str} ({plazo_str})", style_cell_val)],
+            [
+                Paragraph("Frecuencia / Plazo:", style_cell_lbl),
+                Paragraph(f"{frecuencia_str} ({plazo_str})", style_cell_val),
+            ],
             [Paragraph("Tasa Pactada:", style_cell_lbl), Paragraph(tasa_str, style_cell_val)],
         ]
         tabla_credito = Table(credito_content, colWidths=[100, 160])
-        tabla_credito.setStyle(TableStyle([
-            ("SPAN", (0, 0), (1, 0)),
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("TOPPADDING", (0, 0), (-1, -1), 2),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
-            ("LINEBELOW", (0, 0), (1, 0), 1, colors.HexColor("#CBD5E1")),
-            ("BACKGROUND", (0, 0), (1, 0), colors.HexColor("#F8FAFC")),
-        ]))
+        tabla_credito.setStyle(
+            TableStyle(
+                [
+                    ("SPAN", (0, 0), (1, 0)),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("TOPPADDING", (0, 0), (-1, -1), 2),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+                    ("LINEBELOW", (0, 0), (1, 0), 1, colors.HexColor("#CBD5E1")),
+                    ("BACKGROUND", (0, 0), (1, 0), colors.HexColor("#F8FAFC")),
+                ]
+            )
+        )
 
         info_general = Table([[tabla_cliente, tabla_credito]], colWidths=[270, 270])
-        info_general.setStyle(TableStyle([
-            ("VALIGN", (0, 0), (-1, -1), "TOP"),
-            ("LEFTPADDING", (0, 0), (-1, -1), 0),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-            ("BOX", (0, 0), (0, 0), 0.5, colors.HexColor("#E2E8F0")),
-            ("BOX", (1, 0), (1, 0), 0.5, colors.HexColor("#E2E8F0")),
-            ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#FFFFFF")),
-        ]))
+        info_general.setStyle(
+            TableStyle(
+                [
+                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                    ("BOX", (0, 0), (0, 0), 0.5, colors.HexColor("#E2E8F0")),
+                    ("BOX", (1, 0), (1, 0), 0.5, colors.HexColor("#E2E8F0")),
+                    ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#FFFFFF")),
+                ]
+            )
+        )
         elementos.append(info_general)
         elementos.append(Spacer(1, 14))
 
@@ -305,7 +318,9 @@ class PDFService:
         monto_abono_str = formato_moneda(datos.get("pago_monto", 0))
         saldo_cuota_despues_str = formato_moneda(datos.get("saldo_cuota_despues", 0))
         estado_cuota = str(datos.get("cuota_estado", "PENDIENTE")).upper()
-        estado_cuota_badge = "SALDADA (PAGADA)" if estado_cuota == "PAGADA" else f"PARCIAL (Saldo: {saldo_cuota_despues_str})"
+        estado_cuota_badge = (
+            "SALDADA (PAGADA)" if estado_cuota == "PAGADA" else f"PARCIAL (Saldo: {saldo_cuota_despues_str})"
+        )
 
         tabla_detalle_data = [
             [
@@ -321,19 +336,23 @@ class PDFService:
                 Paragraph(monto_cuota_str, style_td),
                 Paragraph(f"<b>{monto_abono_str}</b>", style_td_bold),
                 Paragraph(estado_cuota_badge, style_td),
-            ]
+            ],
         ]
 
         tabla_detalle = Table(tabla_detalle_data, colWidths=[130, 90, 100, 110, 110])
-        tabla_detalle.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1E3A8A")),
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("ALIGN", (1, 0), (-1, -1), "CENTER"),
-            ("TOPPADDING", (0, 0), (-1, -1), 6),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-            ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E1")),
-            ("BACKGROUND", (3, 1), (3, 1), colors.HexColor("#EFF6FF")),  # Resaltar abono
-        ]))
+        tabla_detalle.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1E3A8A")),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("ALIGN", (1, 0), (-1, -1), "CENTER"),
+                    ("TOPPADDING", (0, 0), (-1, -1), 6),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+                    ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E1")),
+                    ("BACKGROUND", (3, 1), (3, 1), colors.HexColor("#EFF6FF")),  # Resaltar abono
+                ]
+            )
+        )
         elementos.append(tabla_detalle)
         elementos.append(Spacer(1, 14))
 
@@ -354,20 +373,26 @@ class PDFService:
             ],
             [
                 Paragraph("<b>Saldo Pendiente Total:</b>", style_cell_lbl),
-                Paragraph(f"<font color='#B91C1C'><b>{formato_moneda(saldo_credito_restante)}</b></font>", style_cell_val),
+                Paragraph(
+                    f"<font color='#B91C1C'><b>{formato_moneda(saldo_credito_restante)}</b></font>", style_cell_val
+                ),
                 Paragraph("<b>Avance de Amortización:</b>", style_cell_lbl),
                 Paragraph(f"<b>{porcentaje_pagado}%</b>", style_cell_val),
-            ]
+            ],
         ]
         tabla_balance = Table(balance_data, colWidths=[140, 130, 140, 130])
-        tabla_balance.setStyle(TableStyle([
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("TOPPADDING", (0, 0), (-1, -1), 5),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
-            ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#F8FAFC")),
-            ("BOX", (0, 0), (-1, -1), 1, colors.HexColor("#E2E8F0")),
-            ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#E2E8F0")),
-        ]))
+        tabla_balance.setStyle(
+            TableStyle(
+                [
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("TOPPADDING", (0, 0), (-1, -1), 5),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+                    ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#F8FAFC")),
+                    ("BOX", (0, 0), (-1, -1), 1, colors.HexColor("#E2E8F0")),
+                    ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#E2E8F0")),
+                ]
+            )
+        )
         elementos.append(tabla_balance)
         elementos.append(Spacer(1, 18))
 
@@ -398,43 +423,46 @@ class PDFService:
             Spacer(1, 35),
             Paragraph("___________________________________", style_cell_lbl),
             Paragraph("<b>Firma del Prestatario / Cliente</b>", style_cell_val),
-            Paragraph(f"C.C. {datos.get('cliente_documento', '__________')}", style_cell_val)
+            Paragraph(f"C.C. {datos.get('cliente_documento', '__________')}", style_cell_val),
         ]
 
         firma_cobrador = [
             Spacer(1, 35),
             Paragraph("___________________________________", style_cell_lbl),
             Paragraph("<b>Recibido Conforme / Sello</b>", style_cell_val),
-            Paragraph("CrediNoda Cobranza", style_cell_val)
+            Paragraph("CrediNoda Cobranza", style_cell_val),
         ]
 
         if qr_flowable:
-            qr_col = [
-                qr_flowable,
-                Paragraph("<font size='6'>Validación Digital</font>", style_legal)
-            ]
+            qr_col = [qr_flowable, Paragraph("<font size='6'>Validación Digital</font>", style_legal)]
             firmas_data = [[firma_cliente, firma_cobrador, qr_col]]
             firmas_table = Table(firmas_data, colWidths=[220, 220, 100])
         else:
             firmas_data = [[firma_cliente, firma_cobrador]]
             firmas_table = Table(firmas_data, colWidths=[270, 270])
 
-        firmas_table.setStyle(TableStyle([
-            ("VALIGN", (0, 0), (-1, -1), "BOTTOM"),
-            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-            ("LEFTPADDING", (0, 0), (-1, -1), 0),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-        ]))
-
-        bloque_inferior = KeepTogether([
-            firmas_table,
-            Spacer(1, 14),
-            Paragraph(
-                "Este recibo es el soporte oficial de descargo y amortización del crédito individual otorgado. "
-                "Consérvelo para cualquier aclaración de saldo o paz y salvo.",
-                style_legal
+        firmas_table.setStyle(
+            TableStyle(
+                [
+                    ("VALIGN", (0, 0), (-1, -1), "BOTTOM"),
+                    ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ]
             )
-        ])
+        )
+
+        bloque_inferior = KeepTogether(
+            [
+                firmas_table,
+                Spacer(1, 14),
+                Paragraph(
+                    "Este recibo es el soporte oficial de descargo y amortización del crédito individual otorgado. "
+                    "Consérvelo para cualquier aclaración de saldo o paz y salvo.",
+                    style_legal,
+                ),
+            ]
+        )
         elementos.append(bloque_inferior)
 
         return elementos
