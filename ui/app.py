@@ -22,6 +22,14 @@ class App(ctk.CTk):
         self.geometry("1200x700")
         self.minsize(1000, 600)
 
+        from credito_app.config import ICON_PATH
+        if ICON_PATH.exists():
+            try:
+                self.iconbitmap(str(ICON_PATH))
+            except Exception:
+                pass
+
+
         inicializar_base_datos(db_path)
         self.conn = get_connection(db_path)
 
