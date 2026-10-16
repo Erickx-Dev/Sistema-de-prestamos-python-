@@ -1,5 +1,6 @@
 [tool.pytest.ini_options]
-testpaths = ["credito_app/tests"]
+pythonpath = [".."]
+testpaths = ["tests"]
 python_files = ["test_*.py"]
 addopts = "-v --strict-markers"
 

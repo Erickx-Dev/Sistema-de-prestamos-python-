@@ -88,8 +88,8 @@ Puedes utilizar **CrediNoda** de dos maneras: ejecutando el código fuente con P
 
 1. **Clona este repositorio:**
    ```bash
-   git clone https://github.com/tu-usuario/CrediNoda.git
-   cd CrediNoda
+   git clone https://github.com/Erickx-Dev/Sistema-de-prestamos-python-.git credito_app
+   cd credito_app
    ```
 
 2. **Crea y activa un entorno virtual:**
@@ -116,7 +116,7 @@ Puedes utilizar **CrediNoda** de dos maneras: ejecutando el código fuente con P
 
 4. **Inicia la aplicación:**
    ```bash
-   python -m credito_app.main
+   python main.py
    ```
 
 ---
@@ -126,10 +126,10 @@ Puedes utilizar **CrediNoda** de dos maneras: ejecutando el código fuente con P
 Si deseas usar el programa sin abrir la consola o distribuirlo a otra computadora con Windows que no tenga Python instalado:
 
 ```bash
-python -m credito_app.build_exe
+python build_exe.py
 ```
 
-Al finalizar el proceso se crearán automáticamente en `credito_app/dist/`:
+Al finalizar el proceso se crearán automáticamente en `dist/`:
 1. `CrediNoda.exe`: Ejecutable único con el ícono oficial.
 2. `CrediNoda_Portable_Windows.zip`: Paquete listo para compartir o llevar en una memoria USB con sus carpetas de datos, comprobantes y respaldos.
 
